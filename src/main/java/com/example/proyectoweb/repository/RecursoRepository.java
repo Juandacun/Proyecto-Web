@@ -1,9 +1,9 @@
 package com.example.proyectoweb.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import com.example.proyectoweb.model.Categoria;
+import com.example.proyectoweb.model.Recurso;
 
-public interface CategoriaRepository extends JpaRepository<Categoria, Long>{
+public interface RecursoRepository extends JpaRepository<Recurso, Long>{
 
 //    findAll()
 //    findById()
