@@ -42,9 +42,10 @@ public class RecursoService {
     }
 
     // DELETE
-    public void eliminar(Long id){
+    public void eliminar(Long id) {
 
-        if(repository.existsById(id)){
+        if (repository.existsById(id)) {
             repository.deleteById(id);
         }
     }
+}

@@ -2,8 +2,10 @@ package com.example.proyectoweb.controller;
 
 
 import com.example.proyectoweb.model.Recurso;
+import com.example.proyectoweb.service.CategoriaService;
 import com.example.proyectoweb.service.RecursoService;
 
+import com.example.proyectoweb.service.UbicacionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
