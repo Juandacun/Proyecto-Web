@@ -15,6 +15,12 @@ public class RecursoService {
     @Autowired
     private RecursoRepository repository;
 
+    @Autowired
+    private CategoriaService categoriaService;
+
+    @Autowired
+    private UbicacionService ubicacionService;
+
     // READ - listar todos
     public List<Recurso> listar() {
         return repository.findAll();
@@ -36,7 +42,9 @@ public class RecursoService {
     }
 
     // DELETE
-    public void eliminar(Long id) {
-        repository.deleteById(id);
+    public void eliminar(Long id){
+
+        if(repository.existsById(id)){
+            repository.deleteById(id);
+        }
     }
-}

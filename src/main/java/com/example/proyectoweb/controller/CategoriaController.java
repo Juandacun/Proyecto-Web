@@ -55,4 +55,21 @@ public class CategoriaController {
         return "redirect:/categorias";
     }
 
+    // Mostrar formulario editar
+    @GetMapping("/editar/{id}")
+    public String editar(@PathVariable Long id, Model model){
+
+        Categoria categoria = service.buscarPorId(id);
+        model.addAttribute("categoria", categoria);
+        return "categorias/formulario";
+    }
+
+    // Actualizar categoría
+    @PostMapping("/actualizar")
+    public String actualizar(@ModelAttribute Categoria categoria){
+
+        service.actualizar(categoria);
+        return "redirect:/categorias";
+    }
+
 }
