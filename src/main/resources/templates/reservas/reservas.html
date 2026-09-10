@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/layout :: head('Reservas')}"></head>
+<body>
+<div class="layout">
+
+  <aside th:replace="~{fragments/layout :: sidebar('reservas')}"></aside>
+
+  <div class="main">
+    <header th:replace="~{fragments/layout :: topbar('Reservas', ${usuario})}"></header>
+
+    <section class="content">
+      <a class="back-link" th:href="@{/catalogo}">&#8592; Volver al cat&aacute;logo</a>
+
+      <div class="page-head page-head--center">
+        <div class="intro intro--tight">
+          <h1>Reservas</h1>
+          <p>Consulta, modifica o cancela reservas antes de su inicio.</p>
+        </div>
+        <a class="btn btn--primary" th:href="@{/reservas/nueva}">Nueva reserva</a>
+      </div>
+
+      <div class="card">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th class="col-equipo">Recurso</th>
+              <th>Fecha</th>
+              <th>Horario</th>
+              <th>Solicitante</th>
+              <th class="ta-right">Estado</th>
+              <th class="ta-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="r : ${reservas}">
+              <td class="td-equipo" th:text="${r.recurso}">Recurso</td>
+              <td class="td-fecha" th:text="${#temporals.format(r.fecha, 'dd/MM/yyyy')}">dd/mm/aaaa</td>
+              <td class="td-fecha"
+                  th:text="${#temporals.format(r.horaInicio, 'HH:mm')} + ' &ndash; ' + ${#temporals.format(r.horaFin, 'HH:mm')}">hh:mm &ndash; hh:mm</td>
+              <td class="td-fecha" th:text="${r.solicitante}">Solicitante</td>
+              <td class="ta-right">
+                <span th:replace="~{fragments/layout :: tag(${r.estado}, ${r.estadoColor})}"></span>
+              </td>
+              <td class="ta-right acciones">
+                <th:block th:if="${r.modificable}">
+                  <a class="link-action" th:href="@{/reservas/{id}/editar(id=${r.id})}">Modificar</a>
+                  <form class="inline-form" method="post" th:action="@{/reservas/{id}/cancelar(id=${r.id})}">
+                    <button class="link-action link-action--danger" type="submit">Cancelar</button>
+                  </form>
+                </th:block>
+                <span class="muted" th:unless="${r.modificable}">&mdash;</span>
+              </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(reservas)}">
+              <td class="empty" colspan="6">No tienes reservas registradas.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+</body>
+</html>

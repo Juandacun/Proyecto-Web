@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/layout :: head('Catálogo de recursos')}"></head>
+<body>
+<div class="layout">
+
+  <aside th:replace="~{fragments/layout :: sidebar('catalogo')}"></aside>
+
+  <main class="main">
+    <header th:replace="~{fragments/layout :: topbar('Catálogo de recursos', ${usuario})}"></header>
+
+    <section class="content">
+      <div class="page-head page-head--center">
+        <div class="intro intro--tight">
+          <h1>Catálogo de recursos</h1>
+          <p>Consulta espacios y equipos institucionales, su ubicación, estado y disponibilidad.</p>
+        </div>
+        <a class="btn btn--primary" th:href="@{/catalogo/nuevo}">Nuevo recurso</a>
+      </div>
+
+      <!-- Filtros -->
+      <form class="filtros" method="get" th:action="@{/catalogo}">
+        <div class="field">
+          <label for="categoria">Categoría</label>
+          <select id="categoria" name="categoria">
+            <option value="">Todos</option>
+            <option th:each="c : ${categorias}" th:value="${c}" th:text="${c}"
+                    th:selected="${c == filtro?.categoria}">Categoría</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="ubicacion">Ubicación</label>
+          <select id="ubicacion" name="ubicacion">
+            <option value="">Todos</option>
+            <option th:each="u : ${ubicaciones}" th:value="${u}" th:text="${u}"
+                    th:selected="${u == filtro?.ubicacion}">Ubicación</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="tipo">Tipo</label>
+          <select id="tipo" name="tipo">
+            <option value="">Todos</option>
+            <option th:each="t : ${tipos}" th:value="${t}" th:text="${t}"
+                    th:selected="${t == filtro?.tipo}">Tipo</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="estado">Estado</label>
+          <select id="estado" name="estado">
+            <option value="">Todos</option>
+            <option th:each="e : ${estados}" th:value="${e}" th:text="${e}"
+                    th:selected="${e == filtro?.estado}">Estado</option>
+          </select>
+        </div>
+      </form>
+
+      <!-- Grid de recursos -->
+      <div class="grid-recursos">
+        <article class="recurso" th:each="r : ${recursos}">
+          <div class="recurso__thumb"
+               th:style="${r.imagen != null} ? 'background-image:url(' + @{${r.imagen}} + ');background-size:cover;background-position:center'">
+            <span th:if="${r.imagen == null}" class="recurso__thumb-ph">foto del recurso</span>
+          </div>
+          <div class="recurso__body">
+            <div class="recurso__top">
+              <span class="recurso__nombre" th:text="${r.nombre}">Recurso</span>
+              <span th:replace="~{fragments/layout :: tag(${r.estado}, ${r.estadoColor})}">Estado</span>
+            </div>
+            <span class="recurso__meta" th:text="${r.categoria} + ' · ' + ${r.ubicacion}">Categoría · Ubicación</span>
+            <a class="recurso__link" th:href="@{/catalogo/{id}/disponibilidad(id=${r.id})}">Ver disponibilidad</a>
+          </div>
+        </article>
+
+        <p th:if="${#lists.isEmpty(recursos)}" class="empty">No hay recursos que coincidan con los filtros.</p>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>
