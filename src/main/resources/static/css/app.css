@@ -131,3 +131,46 @@ a:hover{color:#1D4ED8}
 .inline-form{display:inline}
 .inline-form button{padding:0;background:none;border:none;cursor:pointer;font-family:inherit}
 .link-action--danger{color:#DC2626}
+
+/* ===== Formularios centrados (nueva reserva, entrega) ===== */
+.content--center{align-items:center}
+.form-card{box-sizing:border-box;display:flex;flex-direction:column;gap:20px;padding:28px;width:620px;max-width:100%;
+  background:#fff;border:1px solid #E2E8F0;border-radius:14px}
+.form-card__title{margin:0;font-weight:700;font-size:20px;line-height:24px;color:#0F172A}
+.form-card__title--sm{font-size:15px;line-height:18px}
+.form-card__sub{margin:0;font-size:13px;line-height:16px;color:#64748B}
+.field-row{display:flex;align-items:flex-start;gap:14px;align-self:stretch}
+.field input{width:100%;padding:10px 12px;background:#fff;border:1px solid #CBD5E1;border-radius:6px;
+  font-family:inherit;font-size:13px;line-height:16px;color:#0F172A}
+.field input:focus{outline:none;border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.alerta{display:flex;align-items:center;gap:10px;padding:14px 16px;align-self:stretch;border-radius:8px;
+  font-weight:500;font-size:12.5px;line-height:15px}
+.alerta__icono{font-weight:700;font-size:14px;line-height:17px}
+.alerta--error{background:#FEE2E2;color:#B91C1C}
+.alerta--exito{background:#DCFCE7;color:#15803D}
+
+/* ===== Mantenimiento ===== */
+.td-diagnostico{font-weight:500;font-size:11px;line-height:13px;color:#334155}
+
+/* ===== Tablero ===== */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;align-self:stretch}
+.kpi{display:flex;flex-direction:column;gap:8px;padding:16px;background:#fff;border:1px solid #E2E8F0;border-radius:12px}
+.kpi__label{font-size:12px;line-height:15px;color:#64748B}
+.kpi__valor{font-weight:600;font-size:24px;line-height:29px;color:#0F172A}
+.tablero-row{display:flex;align-items:stretch;gap:20px;align-self:stretch;flex-wrap:wrap}
+.chart-card{flex:1 1 620px;min-width:0;gap:8px}
+.estado-card{flex:1 1 380px;min-width:0}
+.chart-head{display:flex;justify-content:space-between;align-items:center;gap:12px;align-self:stretch}
+.barchart{display:flex;align-items:flex-end;justify-content:space-around;gap:24px;padding:16px 16px 0;
+  align-self:stretch;height:200px;box-sizing:border-box}
+.barcol{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;flex:1;min-width:0;height:100%}
+.barcol__valor{font-weight:600;font-size:13px;line-height:16px;color:#212938}
+.barcol__bar{width:48px;border-radius:6px;background:#3B6FFC}
+.barcol__label{font-size:11px;line-height:13px;color:#64748B;text-align:center}
+
+/* ===== Administración ===== */
+.tabs{display:flex;align-items:center;gap:20px;align-self:stretch;flex-wrap:wrap}
+.tab{display:inline-flex;align-items:center;justify-content:center;padding:10px 18px;min-width:195px;border-radius:6px;
+  border:1px solid #E2E8F0;background:#fff;color:#0F172A;font-size:14px;line-height:17px;text-decoration:none}
+.tab:hover{background:#F8FAFC;color:#0F172A}
+.tab.is-active{background:#2563EB;border-color:#2563EB;color:#fff;font-weight:600}

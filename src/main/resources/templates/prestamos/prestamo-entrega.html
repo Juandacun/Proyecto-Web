@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/layout :: head('Registrar entrega')}"></head>
+<body>
+<div class="layout">
+  <aside th:replace="~{fragments/layout :: sidebar('prestamos')}"></aside>
+  <div class="main">
+    <header th:replace="~{fragments/layout :: topbar('Registrar entrega', ${usuario})}"></header>
+
+    <section class="content content--center">
+      <form class="form-card" method="post" th:action="@{/prestamos}" th:object="${prestamo}">
+        <h1 class="form-card__title form-card__title--sm">Registrar entrega de equipo</h1>
+        <p class="form-card__sub">No se permite prestar un recurso bloqueado o que ya figure como prestado.</p>
+
+        <div class="alerta alerta--error" th:if="${error != null}">
+          <span class="alerta__icono">&#9888;</span>
+          <span th:text="${error}">Error.</span>
+        </div>
+
+        <div class="field">
+          <label for="recursoId">Equipo a prestar</label>
+          <select id="recursoId" th:field="*{recursoId}">
+            <option value="">Selecciona un equipo</option>
+            <option th:each="r : ${recursos}" th:value="${r.id}" th:text="${r.nombre}">Recurso</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="documento">Documento o c&oacute;digo del estudiante</label>
+          <input id="documento" type="text" th:field="*{documento}" placeholder="Documento del estudiante">
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="fechaEntrega">Fecha de entrega</label>
+            <input id="fechaEntrega" type="date" th:field="*{fechaEntrega}">
+          </div>
+          <div class="field">
+            <label for="fechaDevolucion">Devoluci&oacute;n estimada</label>
+            <input id="fechaDevolucion" type="date" th:field="*{fechaDevolucionEstimada}">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="estadoEquipo">Estado del equipo al entregar</label>
+          <select id="estadoEquipo" th:field="*{estadoEquipo}">
+            <option th:each="e : ${estadosEquipo}" th:value="${e}" th:text="${e}">Estado</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="observaciones">Observaciones de entrega</label>
+          <input id="observaciones" type="text" th:field="*{observaciones}" placeholder="Observaciones">
+        </div>
+
+        <div class="form-actions">
+          <a class="btn btn--ghost" th:href="@{/prestamos}">Cancelar</a>
+          <button class="btn btn--primary" type="submit">Registrar entrega</button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
+</body>
+</html>

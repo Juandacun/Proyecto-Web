@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/layout :: head('Tablero e indicadores')}"></head>
+<body>
+<div class="layout">
+  <aside th:replace="~{fragments/layout :: sidebar('tablero')}"></aside>
+  <div class="main">
+    <header th:replace="~{fragments/layout :: topbar('Tablero e indicadores', ${usuario})}"></header>
+
+    <section class="content">
+      <div class="intro intro--tight">
+        <h1>Tablero operativo</h1>
+        <p>Estado actual de los recursos e indicadores b&aacute;sicos de uso.</p>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi" th:each="k : ${indicadores}">
+          <span class="kpi__label" th:text="${k.label}">Indicador</span>
+          <span class="kpi__valor" th:text="${k.valor}">0</span>
+        </div>
+      </div>
+
+      <div class="tablero-row">
+        <div class="card card--pad chart-card">
+          <div class="chart-head">
+            <span class="card__title">Reservas por categor&iacute;a</span>
+            <span class="card__sub">&Uacute;ltimos 30 d&iacute;as</span>
+          </div>
+          <div class="barchart">
+            <div class="barcol" th:each="b : ${reservasPorCategoria}">
+              <span class="barcol__valor" th:text="${b.valor}">0</span>
+              <div class="barcol__bar" th:style="'height:' + ${b.altoPx} + 'px'"></div>
+              <span class="barcol__label" th:text="${b.label}">Categor&iacute;a</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card estado-card">
+          <div class="card__head">
+            <h2 class="card__title">Estado de recursos</h2>
+          </div>
+          <div class="franja" th:each="e : ${estadoRecursos}">
+            <span class="franja__hora" th:text="${e.label}">Estado</span>
+            <span th:replace="~{fragments/layout :: tag(${e.valor}, ${e.color})}"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+</body>
+</html>
