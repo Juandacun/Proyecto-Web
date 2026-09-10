@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/layout :: head('Préstamos y devoluciones')}"></head>
+<body>
+<div class="layout">
+
+  <aside th:replace="~{fragments/layout :: sidebar('prestamos')}"></aside>
+
+  <main class="main">
+    <header th:replace="~{fragments/layout :: topbar('Préstamos', ${usuario})}"></header>
+
+    <section class="content">
+      <div class="page-head">
+        <div class="intro">
+          <h1>Préstamos y devoluciones</h1>
+          <p>Registra la entrega de equipos, su devolución y consulta la puntualidad.</p>
+        </div>
+        <a class="btn btn--primary" th:href="@{/prestamos/nuevo}">Registrar préstamo</a>
+      </div>
+
+      <div class="card">
+        <table class="tabla tabla--prestamos">
+          <thead>
+          <tr>
+            <th>Recurso</th>
+            <th>Entrega</th>
+            <th>Horario</th>
+            <th>Responsable</th>
+            <th class="ta-right">Estado</th>
+            <th class="ta-right">Devolución</th>
+            <th class="ta-right">Acción</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="p : ${prestamos}">
+            <td class="td-equipo" th:text="${p.recurso}">Recurso</td>
+            <td class="td-fecha" th:text="${#temporals.format(p.fechaEntrega, 'dd/MM/yyyy')}">dd/mm/aaaa</td>
+            <td class="td-fecha" th:text="${p.horario}">Horario</td>
+            <td class="td-fecha" th:text="${p.responsable}">Responsable</td>
+            <td class="ta-right">
+              <span th:replace="~{fragments/layout :: tag(${p.estado}, ${p.estadoColor})}">Estado</span>
+            </td>
+            <td class="ta-right">
+              <span th:if="${p.devolucion != null}"
+                    th:replace="~{fragments/layout :: tag(${p.devolucion}, ${p.devolucionColor})}">Devolución</span>
+              <span th:if="${p.devolucion == null}" class="muted">&mdash;</span>
+            </td>
+            <td class="ta-right">
+              <a th:if="${p.devolucion == null}" class="link-action"
+                 th:href="@{/prestamos/{id}/devolucion(id=${p.id})}">Registrar devolución</a>
+              <span th:if="${p.devolucion != null}" class="muted">&mdash;</span>
+            </td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(prestamos)}">
+            <td colspan="7" class="empty">No hay préstamos registrados.</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

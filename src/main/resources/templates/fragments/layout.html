@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Fragmentos de layout</title>
+</head>
+<body>
+
+<!-- ============ HEAD ============ -->
+<head th:fragment="head(titulo)">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="${titulo} + ' · CampusRecursos'">CampusRecursos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+
+<!-- ============ SIDEBAR ============ -->
+<aside class="sidebar" th:fragment="sidebar(activo)">
+  <div class="brand">CampusRecursos</div>
+  <div class="brand-sub">Gestión de reservas y recursos</div>
+  <div class="spacer"></div>
+  <a class="nav-item" th:href="@{/catalogo}"      th:classappend="${activo == 'catalogo'} ? ' is-active'">Catálogo de recursos</a>
+  <a class="nav-item" th:href="@{/reservas}"      th:classappend="${activo == 'reservas'} ? ' is-active'">Reservas</a>
+  <a class="nav-item" th:href="@{/prestamos}"     th:classappend="${activo == 'prestamos'} ? ' is-active'">Préstamos y devoluciones</a>
+  <a class="nav-item" th:href="@{/incidentes}"    th:classappend="${activo == 'incidentes'} ? ' is-active'">Incidentes</a>
+  <a class="nav-item" th:href="@{/mantenimiento}" th:classappend="${activo == 'mantenimiento'} ? ' is-active'">Mantenimiento</a>
+  <a class="nav-item" th:href="@{/tablero}"       th:classappend="${activo == 'tablero'} ? ' is-active'">Tablero e indicadores</a>
+  <a class="nav-item" th:href="@{/admin}"         th:classappend="${activo == 'admin'} ? ' is-active'">Administración</a>
+</aside>
+
+<!-- ============ TOPBAR ============ -->
+<header class="topbar" th:fragment="topbar(titulo, usuario)">
+  <div class="screen-title" th:text="${titulo}">Título</div>
+  <div class="right-group">
+    <div class="role-pill">
+      <span class="role-text" th:text="${usuario != null} ? ${usuario.rol} + ' · ' + ${usuario.nombre} : 'Invitado'">Invitado</span>
+      <span class="caret">&#9662;</span>
+    </div>
+    <div class="avatar" th:text="${usuario != null} ? ${usuario.iniciales} : '—'">—</div>
+  </div>
+</header>
+
+<!-- ============ TAG DE ESTADO ============ -->
+<span class="tag" th:fragment="tag(texto, color)" th:classappend="' tag--' + ${color}" th:text="${texto}">Estado</span>
+
+</body>
+</html>
