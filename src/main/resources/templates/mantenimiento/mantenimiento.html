@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/layout :: head('Mantenimiento')}"></head>
+<body>
+<div class="layout">
+  <aside th:replace="~{fragments/layout :: sidebar('mantenimiento')}"></aside>
+  <div class="main">
+    <header th:replace="~{fragments/layout :: topbar('Mantenimiento', ${usuario})}"></header>
+
+    <section class="content">
+      <div class="page-head page-head--center">
+        <div class="intro intro--tight">
+          <h1>Mantenimiento y bloqueo de recursos</h1>
+          <p>Registra y da seguimiento a una intervenci&oacute;n hasta habilitar de nuevo el recurso.</p>
+        </div>
+        <a class="btn btn--primary" th:href="@{/mantenimiento/nuevo}">Nueva intervenci&oacute;n</a>
+      </div>
+
+      <div class="card">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th class="col-equipo">Equipo</th>
+              <th>Apertura</th>
+              <th>Diagn&oacute;stico</th>
+              <th class="ta-right">Estado</th>
+              <th class="ta-right">Cierre</th>
+              <th class="ta-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="m : ${intervenciones}">
+              <td class="td-equipo" th:text="${m.recurso}">Equipo</td>
+              <td class="td-fecha" th:text="${#temporals.format(m.apertura, 'dd/MM/yyyy')}">dd/mm/aaaa</td>
+              <td class="td-diagnostico" th:text="${m.diagnostico}">Diagn&oacute;stico</td>
+              <td class="ta-right">
+                <span th:replace="~{fragments/layout :: tag(${m.estado}, ${m.estadoColor})}"></span>
+              </td>
+              <td class="td-fecha ta-right"
+                  th:text="${m.cierre != null} ? ${#temporals.format(m.cierre, 'dd/MM/yyyy')} : '&mdash;'">&mdash;</td>
+              <td class="ta-right acciones">
+                <form class="inline-form" th:if="${m.cierre == null}" method="post"
+                      th:action="@{/mantenimiento/{id}/finalizar(id=${m.id})}">
+                  <button class="link-action" type="submit">Finalizar y habilitar</button>
+                </form>
+                <span class="muted" th:if="${m.cierre != null}">&mdash;</span>
+              </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(intervenciones)}">
+              <td class="empty" colspan="6">No hay intervenciones registradas.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+</body>
+</html>

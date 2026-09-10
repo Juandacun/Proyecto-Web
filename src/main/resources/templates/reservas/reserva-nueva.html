@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/layout :: head('Nueva reserva')}"></head>
+<body>
+<div class="layout">
+  <aside th:replace="~{fragments/layout :: sidebar('reservas')}"></aside>
+  <div class="main">
+    <header th:replace="~{fragments/layout :: topbar('Nueva reserva', ${usuario})}"></header>
+
+    <section class="content content--center">
+      <form class="form-card" method="post" th:action="@{/reservas}" th:object="${reserva}">
+        <h1 class="form-card__title">Nueva reserva</h1>
+        <p class="form-card__sub">Selecciona el recurso, la fecha y el horario. El sistema valida que no exista otra reserva activa en el mismo intervalo.</p>
+
+        <div class="alerta alerta--error" th:if="${error != null}">
+          <span class="alerta__icono">&#9888;</span>
+          <span th:text="${error}">Error.</span>
+        </div>
+        <div class="alerta alerta--exito" th:if="${exito != null}">
+          <span class="alerta__icono">&#10003;</span>
+          <span th:text="${exito}">Reserva confirmada.</span>
+        </div>
+
+        <div class="field">
+          <label for="recursoId">Recurso</label>
+          <select id="recursoId" th:field="*{recursoId}">
+            <option value="">Selecciona un recurso</option>
+            <option th:each="r : ${recursos}" th:value="${r.id}" th:text="${r.nombre}">Recurso</option>
+          </select>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="fecha">Fecha</label>
+            <input id="fecha" type="date" th:field="*{fecha}">
+          </div>
+          <div class="field">
+            <label for="horaInicio">Hora inicio</label>
+            <input id="horaInicio" type="time" th:field="*{horaInicio}">
+          </div>
+          <div class="field">
+            <label for="horaFin">Hora fin</label>
+            <input id="horaFin" type="time" th:field="*{horaFin}">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="motivo">Motivo de la reserva</label>
+          <input id="motivo" type="text" th:field="*{motivo}" placeholder="Motivo de la reserva">
+        </div>
+
+        <div class="form-actions">
+          <a class="btn btn--ghost" th:href="@{/reservas}">Cancelar</a>
+          <button class="btn btn--primary" type="submit">Confirmar reserva</button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
+</body>
+</html>

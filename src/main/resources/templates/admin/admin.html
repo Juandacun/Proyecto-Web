@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/layout :: head('Administraci&oacute;n')}"></head>
+<body>
+<div class="layout">
+  <aside th:replace="~{fragments/layout :: sidebar('admin')}"></aside>
+  <div class="main">
+    <header th:replace="~{fragments/layout :: topbar('Administraci&oacute;n', ${usuario})}"></header>
+
+    <section class="content">
+      <div class="intro intro--tight">
+        <h1>Administraci&oacute;n de recursos</h1>
+        <p>CRUD de recursos, categor&iacute;as y ubicaciones. Los roles y permisos se activar&aacute;n en la tercera entrega.</p>
+      </div>
+
+      <div class="tabs">
+        <a class="tab" th:href="@{/admin(tab='recursos')}"    th:classappend="${tab == 'recursos'} ? ' is-active'">Recursos</a>
+        <a class="tab" th:href="@{/admin(tab='categorias')}"  th:classappend="${tab == 'categorias'} ? ' is-active'">Categor&iacute;as</a>
+        <a class="tab" th:href="@{/admin(tab='ubicaciones')}" th:classappend="${tab == 'ubicaciones'} ? ' is-active'">Ubicaciones</a>
+      </div>
+
+      <div class="card">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th class="col-equipo">Recurso</th>
+              <th>Categor&iacute;a</th>
+              <th>Ubicaci&oacute;n</th>
+              <th>Tipo</th>
+              <th class="ta-right">Estado</th>
+              <th class="ta-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="r : ${recursos}">
+              <td class="td-equipo" th:text="${r.nombre}">Recurso</td>
+              <td th:text="${r.categoria}">Categor&iacute;a</td>
+              <td class="td-diagnostico" th:text="${r.ubicacion}">Ubicaci&oacute;n</td>
+              <td class="td-diagnostico" th:text="${r.tipo}">Tipo</td>
+              <td class="ta-right">
+                <span th:replace="~{fragments/layout :: tag(${r.estado}, ${r.estadoColor})}"></span>
+              </td>
+              <td class="ta-right acciones">
+                <a class="link-action" th:href="@{/admin/recursos/{id}/editar(id=${r.id})}">Editar</a>
+                <form class="inline-form" method="post" th:action="@{/admin/recursos/{id}/eliminar(id=${r.id})}">
+                  <button class="link-action link-action--danger" type="submit">Eliminar</button>
+                </form>
+              </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(recursos)}">
+              <td class="empty" colspan="6">No hay recursos registrados.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <a class="btn btn--primary" th:href="@{/admin/recursos/nuevo}">+ Nuevo recurso</a>
+    </section>
+  </div>
+</div>
+</body>
+</html>
