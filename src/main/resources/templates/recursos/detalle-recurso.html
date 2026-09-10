@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/layout :: head('Detalle del recurso')}"></head>
+<body>
+<div class="layout">
+
+  <aside th:replace="~{fragments/layout :: sidebar('catalogo')}"></aside>
+
+  <div class="main">
+    <header th:replace="~{fragments/layout :: topbar('Detalle del recurso', ${usuario})}"></header>
+
+    <section class="content">
+      <a class="back-link" th:href="@{/catalogo}">&#8592; Volver al cat&aacute;logo</a>
+
+      <div class="detalle-titulo">
+        <h1 th:text="${recurso.nombre}">Nombre del recurso</h1>
+        <span th:replace="~{fragments/layout :: tag(${recurso.estado}, ${recurso.estadoColor})}"></span>
+      </div>
+
+      <div class="detalle">
+
+        <!-- Columna izquierda -->
+        <div class="detalle__main">
+          <div class="detalle__foto">
+            <img th:if="${recurso.foto != null}" th:src="${recurso.foto}" th:alt="${recurso.nombre}">
+            <span th:if="${recurso.foto == null}" class="detalle__foto-ph">foto del recurso</span>
+          </div>
+
+          <div class="card card--pad">
+            <h2 class="card__title">Descripci&oacute;n</h2>
+            <p class="detalle__desc" th:text="${recurso.descripcion}">Descripci&oacute;n del recurso.</p>
+            <dl class="atributos">
+              <div class="atributo">
+                <dt>CATEGOR&Iacute;A</dt>
+                <dd th:text="${recurso.categoria}">Categor&iacute;a</dd>
+              </div>
+              <div class="atributo">
+                <dt>UBICACI&Oacute;N</dt>
+                <dd th:text="${recurso.ubicacion}">Ubicaci&oacute;n</dd>
+              </div>
+              <div class="atributo">
+                <dt>TIPO</dt>
+                <dd th:text="${recurso.tipo}">Tipo</dd>
+              </div>
+              <div class="atributo" th:if="${recurso.capacidad != null}">
+                <dt>CAPACIDAD</dt>
+                <dd th:text="${recurso.capacidad} + ' personas'">Personas</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+
+        <!-- Columna derecha -->
+        <aside class="detalle__side">
+          <div class="card">
+            <div class="card__head">
+              <h2 class="card__title">Disponibilidad esta semana</h2>
+              <p class="card__sub">Vista simplificada por franja horaria</p>
+            </div>
+            <div class="franja" th:each="f : ${franjas}">
+              <span class="franja__hora"
+                    th:text="${#temporals.format(f.inicio, 'EEE dd MMM')} + ' &middot; '
+                             + ${#temporals.format(f.inicio, 'HH:mm')} + ' &ndash; '
+                             + ${#temporals.format(f.fin, 'HH:mm')}">Franja horaria</span>
+              <span th:replace="~{fragments/layout :: tag(${f.estado}, ${f.estadoColor})}"></span>
+            </div>
+            <p class="empty" th:if="${#lists.isEmpty(franjas)}">Sin franjas publicadas para esta semana.</p>
+          </div>
+
+          <a class="btn btn--primary btn--block"
+             th:href="@{/reservas/nueva(recursoId=${recurso.id})}">Reservar este recurso</a>
+          <a class="btn btn--ghost btn--block"
+             th:href="@{/incidentes/nuevo(recursoId=${recurso.id})}">Reportar incidente</a>
+        </aside>
+      </div>
+    </section>
+  </div>
+</div>
+</body>
+</html>

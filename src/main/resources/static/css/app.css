@@ -85,3 +85,49 @@ a:hover{color:#1D4ED8}
 .tag--verde{background:#DCFCE7;color:#15803D}
 .tag--rojo{background:#FEE2E2;color:#B91C1C}
 .tag--violeta{background:#EDE9FE;color:#6D28D9}
+
+/* ===== Detalle de recurso ===== */
+.back-link{font-weight:500;font-size:13px;line-height:16px;color:#2563EB;text-decoration:none}
+.back-link:hover{text-decoration:underline}
+.detalle-titulo{display:flex;align-items:center;gap:12px}
+.detalle-titulo h1{margin:0;font-weight:700;font-size:26px;line-height:31px}
+.detalle{display:flex;align-items:flex-start;gap:24px;align-self:stretch;flex-wrap:wrap}
+.detalle__main{display:flex;flex-direction:column;gap:20px;flex:1 1 620px;min-width:0}
+.detalle__side{display:flex;flex-direction:column;gap:16px;flex:1 1 360px;min-width:0}
+.detalle__foto{height:260px;background:#E2E8F0;border-radius:12px;overflow:hidden;
+  display:flex;align-items:center;justify-content:center}
+.detalle__foto img{width:100%;height:100%;object-fit:cover}
+.detalle__foto-ph{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#94A3B8}
+.card--pad{display:flex;flex-direction:column;gap:12px;padding:20px}
+.card__head{display:flex;flex-direction:column;gap:2px;padding:20px 20px 16px}
+.card__title{margin:0;font-weight:600;font-size:15px;line-height:18px;color:#0F172A}
+.card__sub{margin:0;font-weight:400;font-size:12px;line-height:15px;color:#64748B}
+.detalle__desc{margin:0;font-size:13px;line-height:16px;color:#475569;text-wrap:pretty}
+.atributos{display:flex;flex-wrap:wrap;gap:24px;margin:4px 0 0}
+.atributo{display:flex;flex-direction:column;gap:4px}
+.atributo dt{font-weight:500;font-size:11px;line-height:13px;letter-spacing:.04em;color:#94A3B8}
+.atributo dd{margin:0;font-weight:600;font-size:13px;line-height:16px;color:#0F172A}
+.franja{display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:12px 20px;border-top:1px solid #F1F5F9}
+.franja__hora{font-weight:500;font-size:12px;line-height:15px;color:#334155}
+.btn--block{width:100%}
+.btn--ghost{background:#fff;border:1px solid #E2E8F0;color:#0F172A}
+.btn--ghost:hover{background:#F8FAFC;color:#0F172A}
+
+/* ===== Incidentes / Reservas ===== */
+.tag--gris{background:#F1F5F9;color:#475569}
+.incidentes{display:flex;align-items:flex-start;gap:24px;align-self:stretch;flex-wrap:wrap}
+.form-incidente{flex:1 1 420px;min-width:0}
+.incidentes > .card:last-child{flex:1 1 600px;min-width:0}
+.card__note{margin:0;font-size:13px;line-height:16px;color:#475569}
+.field textarea{width:100%;padding:10px 12px;background:#fff;border:1px solid #CBD5E1;border-radius:6px;
+  font-family:inherit;font-size:13px;line-height:16px;color:#0F172A;resize:vertical}
+.field textarea:focus{outline:none;border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.form-actions{display:flex;justify-content:flex-end;align-items:center;gap:12px;align-self:stretch;padding-top:4px}
+.btn--danger{background:#DC2626;color:#fff}
+.btn--danger:hover{background:#B91C1C;color:#fff}
+.acciones{white-space:nowrap}
+.acciones .link-action + .inline-form{margin-left:12px}
+.inline-form{display:inline}
+.inline-form button{padding:0;background:none;border:none;cursor:pointer;font-family:inherit}
+.link-action--danger{color:#DC2626}

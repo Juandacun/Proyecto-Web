@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/layout :: head('Incidentes')}"></head>
+<body>
+<div class="layout">
+
+  <aside th:replace="~{fragments/layout :: sidebar('incidentes')}"></aside>
+
+  <div class="main">
+    <header th:replace="~{fragments/layout :: topbar('Incidentes', ${usuario})}"></header>
+
+    <section class="content">
+      <div class="incidentes">
+
+        <!-- Formulario de reporte -->
+        <form class="card card--pad form-incidente" method="post" th:action="@{/incidentes}" th:object="${incidente}">
+          <h2 class="card__title">Reportar novedad</h2>
+          <p class="card__note">Un incidente cr&iacute;tico puede bloquear el recurso hasta su revisi&oacute;n</p>
+
+          <div class="field">
+            <label for="recursoId">Recurso</label>
+            <select id="recursoId" th:field="*{recursoId}">
+              <option value="">Selecciona un recurso</option>
+              <option th:each="r : ${recursos}" th:value="${r.id}" th:text="${r.nombre}">Recurso</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="tipo">Tipo de novedad</label>
+            <select id="tipo" th:field="*{tipo}">
+              <option th:each="t : ${tipos}" th:value="${t}" th:text="${t}">Tipo de novedad</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="severidad">Severidad</label>
+            <select id="severidad" th:field="*{severidad}">
+              <option th:each="s : ${severidades}" th:value="${s}" th:text="${s}">Severidad</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="descripcion">Descripci&oacute;n</label>
+            <textarea id="descripcion" rows="2" th:field="*{descripcion}"
+                      placeholder="Describe qu&eacute; ocurri&oacute;, cu&aacute;ndo y en qu&eacute; condiciones se encontr&oacute; el recurso."></textarea>
+          </div>
+
+          <div class="form-actions">
+            <a class="btn btn--ghost" th:href="@{/catalogo}">Cancelar</a>
+            <button class="btn btn--danger" type="submit">Reportar incidente</button>
+          </div>
+        </form>
+
+        <!-- Historial -->
+        <div class="card">
+          <div class="card__head">
+            <h2 class="card__title">Incidentes reportados</h2>
+            <p class="card__sub">Historial reciente</p>
+          </div>
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th class="col-equipo">Equipo</th>
+                <th>Tipo</th>
+                <th class="ta-right">Severidad</th>
+                <th class="ta-right">Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="i : ${incidentes}">
+                <td class="td-equipo" th:text="${i.recurso}">Equipo</td>
+                <td th:text="${i.tipo}">Tipo</td>
+                <td class="ta-right">
+                  <span th:replace="~{fragments/layout :: tag(${i.severidad}, ${i.severidadColor})}"></span>
+                </td>
+                <td class="td-fecha ta-right"
+                    th:text="${#temporals.format(i.fecha, 'dd/MM/yyyy')}">dd/mm/aaaa</td>
+              </tr>
+              <tr th:if="${#lists.isEmpty(incidentes)}">
+                <td class="empty" colspan="4">No hay incidentes reportados.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+</body>
+</html>
