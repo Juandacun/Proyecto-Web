@@ -52,8 +52,11 @@ public class RecursoController {
 
     // Guardar recurso
     @PostMapping("/guardar")
-    public String guardar(@ModelAttribute Recurso recurso){
-        service.guardar(recurso);
+    public String guardar(@ModelAttribute Recurso recurso, Model model){
+        if (!tieneCategoriaYUbicacion(recurso)) {
+            return volverAlFormulario(recurso, model);
+        }
+        servicioGuardar(recurso);
         return "redirect:/recursos";
     }
 
@@ -77,8 +80,11 @@ public class RecursoController {
 
     // Actualizar
     @PostMapping("/actualizar")
-    public String actualizar(@ModelAttribute Recurso recurso){
-        service.actualizar(recurso);
+    public String actualizar(@ModelAttribute Recurso recurso, Model model){
+        if (!tieneCategoriaYUbicacion(recurso)) {
+            return volverAlFormulario(recurso, model);
+        }
+        servicioGuardar(recurso);
         return "redirect:/recursos";
     }
 
@@ -88,6 +94,30 @@ public class RecursoController {
     public String eliminar(@PathVariable Long id){
         service.eliminar(id);
         return "redirect:/recursos";
+    }
+
+    private boolean tieneCategoriaYUbicacion(Recurso recurso) {
+        return recurso.getCategoria() != null && recurso.getCategoria().getIdCategoria() != null
+                && recurso.getUbicacion() != null && recurso.getUbicacion().getIdUbicacion() != null;
+    }
+
+    private String volverAlFormulario(Recurso recurso, Model model) {
+        if (recurso.getEstado() == null || recurso.getEstado().isBlank()) {
+            recurso.setEstado("Disponible");
+        }
+        model.addAttribute("usuario", null);
+        model.addAttribute("error", "Selecciona la categor&iacute;a y la ubicaci&oacute;n del recurso.");
+        model.addAttribute("recurso", recurso);
+        model.addAttribute("categorias", categoriaService.listar());
+        model.addAttribute("ubicaciones", ubicacionService.listar());
+        return "recursos/formulario";
+    }
+
+    private void servicioGuardar(Recurso recurso) {
+        if (recurso.getEstado() == null || recurso.getEstado().isBlank()) {
+            recurso.setEstado("Disponible");
+        }
+        service.guardar(recurso);
     }
 
 }
