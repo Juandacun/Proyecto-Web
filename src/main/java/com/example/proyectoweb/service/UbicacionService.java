@@ -43,7 +43,11 @@ public class UbicacionService {
 
     // Eliminar
     public void eliminar(Long id){
-        repository.deleteById(id);
+
+        if(repository.existsById(id)){
+            repository.deleteById(id);
+        }
+
     }
 
 }

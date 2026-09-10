@@ -24,11 +24,12 @@ public class Recurso {
     @Column(nullable = false)
     private String estado;
 
-    // Relación con recursos
+    // Relación muchos recursos pertenecen a una categoría
     @ManyToOne
     @JoinColumn(name = "id_categoria", nullable = false)
     private Categoria categoria;
 
+    // Relación muchos recursos pertenecen a una ubicación
     @ManyToOne
     @JoinColumn(name = "id_ubicacion", nullable = false)
     private Ubicacion ubicacion;
