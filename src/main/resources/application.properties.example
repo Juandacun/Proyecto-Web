@@ -1,0 +1,8 @@
+spring.application.name=proyectoweb
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/web_db
+spring.datasource.username=postgres
+spring.datasource.password=TU_CONTRASEÑA_AQUI
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
