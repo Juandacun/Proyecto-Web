@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/layout :: head('Categor&iacute;as')}"></head>
+<body>
+<div class="layout">
+  <aside th:replace="~{fragments/layout :: sidebar('admin')}"></aside>
+  <div class="main">
+    <header th:replace="~{fragments/layout :: topbar('Categor&iacute;as', ${usuario})}"></header>
+
+    <section class="content">
+      <div class="intro intro--tight">
+        <h1>Administraci&oacute;n de categor&iacute;as</h1>
+        <p>Gestiona las categor&iacute;as para clasificar los recursos del campus.</p>
+      </div>
+
+      <div class="card">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th class="col-equipo">Nombre</th>
+              <th>Descripci&oacute;n</th>
+              <th class="ta-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="c : ${categorias}">
+              <td class="td-equipo" th:text="${c.nombre}">Categor&iacute;a</td>
+              <td class="td-diagnostico" th:text="${c.descripcion}">Descripci&oacute;n</td>
+              <td class="ta-right acciones">
+                <a class="link-action" th:href="@{/categorias/editar/{id}(id=${c.idCategoria})}">Editar</a>
+                <form class="inline-form" method="get" th:action="@{/categorias/eliminar/{id}(id=${c.idCategoria})}">
+                  <button class="link-action link-action--danger" type="submit">Eliminar</button>
+                </form>
+              </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(categorias)}">
+              <td class="empty" colspan="3">No hay categor&iacute;as registradas.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <a class="btn btn--primary btn--sm" th:href="@{/categorias/nuevo}">+ Nueva categor&iacute;a</a>
+    </section>
+  </div>
+</div>
+</body>
+</html>

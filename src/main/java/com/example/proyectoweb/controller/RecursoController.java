@@ -30,6 +30,7 @@ public class RecursoController {
     // Listar Recursos
     @GetMapping
     public String listar(Model model){
+        model.addAttribute("usuario", null);
         model.addAttribute("recursos", service.listar());
         return "recursos/listar";
     }
@@ -39,6 +40,7 @@ public class RecursoController {
     @GetMapping("/nuevo")
     public String nuevo(Model model){
 
+        model.addAttribute("usuario", null);
         model.addAttribute("recurso", new Recurso());
 
         model.addAttribute("categorias", categoriaService.listar());
@@ -62,6 +64,7 @@ public class RecursoController {
 
         Recurso recurso = service.buscarPorId(id);
 
+        model.addAttribute("usuario", null);
         model.addAttribute("recurso", recurso);
 
         model.addAttribute("categorias", categoriaService.listar());

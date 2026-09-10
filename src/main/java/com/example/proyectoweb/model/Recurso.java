@@ -115,4 +115,28 @@ public class Recurso {
     public void setUbicacion(Ubicacion ubicacion) {
         this.ubicacion = ubicacion;
     }
+
+    public String getEstadoColor() {
+        return colorDeEstado(estado);
+    }
+
+    public static String colorDeEstado(String estado) {
+        if (estado == null) {
+            return "gris";
+        }
+        String e = estado.toLowerCase();
+        if (e.contains("disponible")) {
+            return "verde";
+        }
+        if (e.contains("reservad")) {
+            return "azul";
+        }
+        if (e.contains("prestam") || e.contains("prestado")) {
+            return "ambar";
+        }
+        if (e.contains("mantenimiento") || e.contains("reparacion") || e.contains("dan")) {
+            return "rojo";
+        }
+        return "gris";
+    }
 }

@@ -22,6 +22,7 @@ public class UbicacionController {
     // LISTAR
     @GetMapping
     public String listar(Model model){
+        model.addAttribute("usuario", null);
         model.addAttribute("ubicaciones", service.listar());
         return "ubicaciones/listar";
     }
@@ -30,6 +31,7 @@ public class UbicacionController {
     // FORMULARIO NUEVO
     @GetMapping("/nuevo")
     public String nuevo(Model model){
+        model.addAttribute("usuario", null);
         model.addAttribute("ubicacion", new Ubicacion());
         return "ubicaciones/formulario";
     }
@@ -47,6 +49,7 @@ public class UbicacionController {
     @GetMapping("/editar/{id}")
     public String editar(@PathVariable Long id, Model model){
         Ubicacion ubicacion = service.buscarPorId(id);
+        model.addAttribute("usuario", null);
         model.addAttribute("ubicacion", ubicacion);
         return "ubicaciones/formulario";
     }

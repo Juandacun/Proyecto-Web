@@ -22,6 +22,7 @@ public class CategoriaController {
     @GetMapping
     public String listar(Model model){
 
+        model.addAttribute("usuario", null);
         model.addAttribute("categorias", service.listar());
         return "categorias/listar";
     }
@@ -31,6 +32,7 @@ public class CategoriaController {
     @GetMapping("/nuevo")
     public String nuevo(Model model){
 
+        model.addAttribute("usuario", null);
         model.addAttribute("categoria", new Categoria());
         return "categorias/formulario";
     }
@@ -60,6 +62,7 @@ public class CategoriaController {
     public String editar(@PathVariable Long id, Model model){
 
         Categoria categoria = service.buscarPorId(id);
+        model.addAttribute("usuario", null);
         model.addAttribute("categoria", categoria);
         return "categorias/formulario";
     }

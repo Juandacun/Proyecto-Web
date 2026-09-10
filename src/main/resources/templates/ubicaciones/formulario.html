@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/layout :: head('Ubicaci&oacute;n')}"></head>
+<body>
+<div class="layout">
+  <aside th:replace="~{fragments/layout :: sidebar('admin')}"></aside>
+  <div class="main">
+    <header th:replace="~{fragments/layout :: topbar('Ubicaci&oacute;n', ${usuario})}"></header>
+
+    <section class="content content--center">
+      <form class="form-card" method="post"
+            th:action="@{${ubicacion.idUbicacion == null} ? '/ubicaciones/guardar' : '/ubicaciones/actualizar'}"
+            th:object="${ubicacion}">
+        <h1 class="form-card__title" th:text="${ubicacion.idUbicacion == null} ? 'Nueva ubicaci&oacute;n' : 'Editar ubicaci&oacute;n'">Ubicaci&oacute;n</h1>
+        <p class="form-card__sub">Registra el lugar f&iacute;sico donde se encuentran los recursos.</p>
+
+        <div class="field">
+          <label for="nombre">Nombre</label>
+          <input id="nombre" type="text" th:field="*{nombre}">
+        </div>
+
+        <div class="field">
+          <label for="edificio">Edificio</label>
+          <input id="edificio" type="text" th:field="*{edificio}">
+        </div>
+
+        <div class="field">
+          <label for="descripcion">Descripci&oacute;n</label>
+          <input id="descripcion" type="text" th:field="*{descripcion}">
+        </div>
+
+        <div class="form-actions">
+          <a class="btn btn--ghost" th:href="@{/ubicaciones}">Cancelar</a>
+          <button class="btn btn--primary" type="submit">Guardar</button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
+</body>
+</html>

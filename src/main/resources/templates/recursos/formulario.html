@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/layout :: head('Recurso')}"></head>
+<body>
+<div class="layout">
+  <aside th:replace="~{fragments/layout :: sidebar('admin')}"></aside>
+  <div class="main">
+    <header th:replace="~{fragments/layout :: topbar('Recurso', ${usuario})}"></header>
+
+    <section class="content content--center">
+      <form class="form-card" method="post"
+            th:action="@{${recurso.idRecurso == null} ? '/recursos/guardar' : '/recursos/actualizar'}"
+            th:object="${recurso}">
+        <h1 class="form-card__title" th:text="${recurso.idRecurso == null} ? 'Nuevo recurso' : 'Editar recurso'">Recurso</h1>
+        <p class="form-card__sub">Registra el espacio o equipo con su categor&iacute;a, ubicaci&oacute;n y estado.</p>
+
+        <div class="field">
+          <label for="nombre">Nombre</label>
+          <input id="nombre" type="text" th:field="*{nombre}">
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="tipo">Tipo</label>
+            <input id="tipo" type="text" th:field="*{tipo}">
+          </div>
+          <div class="field">
+            <label for="estado">Estado</label>
+            <select id="estado" th:field="*{estado}">
+              <option value="Disponible">Disponible</option>
+              <option value="Reservado">Reservado</option>
+              <option value="En préstamo">En pr&eacute;stamo</option>
+              <option value="En mantenimiento">En mantenimiento</option>
+              <option value="Fuera de servicio">Fuera de servicio</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="categoria">Categor&iacute;a</label>
+            <select id="categoria" th:field="*{categoria.idCategoria}">
+              <option value="">Selecciona una categor&iacute;a</option>
+              <option th:each="c : ${categorias}" th:value="${c.idCategoria}" th:text="${c.nombre}">Categor&iacute;a</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="ubicacion">Ubicaci&oacute;n</label>
+            <select id="ubicacion" th:field="*{ubicacion.idUbicacion}">
+              <option value="">Selecciona una ubicaci&oacute;n</option>
+              <option th:each="u : ${ubicaciones}" th:value="${u.idUbicacion}" th:text="${u.nombre}">Ubicaci&oacute;n</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="descripcion">Descripci&oacute;n</label>
+          <input id="descripcion" type="text" th:field="*{descripcion}">
+        </div>
+
+        <div class="field">
+          <label for="caracteristicas">Caracter&iacute;sticas</label>
+          <input id="caracteristicas" type="text" th:field="*{caracteristicas}">
+        </div>
+
+        <div class="form-actions">
+          <a class="btn btn--ghost" th:href="@{/recursos}">Cancelar</a>
+          <button class="btn btn--primary" type="submit">Guardar</button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
+</body>
+</html>
