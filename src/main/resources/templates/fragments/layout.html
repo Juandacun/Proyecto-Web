@@ -1,11 +1,3 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Fragmentos de layout</title>
-</head>
-<body>
-
 <!-- ============ HEAD ============ -->
 <head th:fragment="head(titulo)">
   <meta charset="UTF-8">
@@ -45,6 +37,3 @@
 
 <!-- ============ TAG DE ESTADO ============ -->
 <span class="tag" th:fragment="tag(texto, color)" th:classappend="' tag--' + ${color}" th:text="${texto}">Estado</span>
-
-</body>
-</html>
