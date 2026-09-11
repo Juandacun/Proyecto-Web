@@ -26,6 +26,16 @@ public class RecursoService {
         return repository.findAll();
     }
 
+    // READ - listar solo equipos (los usan los prestamos)
+    public List<Recurso> listarEquipos() {
+        return repository.findByClase(Recurso.Clase.EQUIPO);
+    }
+
+    // READ - listar solo espacios y salas (usan las reservas)
+    public List<Recurso> listarEspacios() {
+        return repository.findByClase(Recurso.Clase.ESPACIO);
+    }
+
     // READ - buscar uno
     public Recurso buscarPorId(Long id) {
         return repository.findById(id).orElse(null);

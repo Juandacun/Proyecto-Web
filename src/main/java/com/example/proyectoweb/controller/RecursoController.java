@@ -105,6 +105,9 @@ public class RecursoController {
         if (recurso.getEstado() == null || recurso.getEstado().isBlank()) {
             recurso.setEstado("Disponible");
         }
+        if (recurso.getClase() == null) {
+            recurso.setClase(Recurso.Clase.ESPACIO);
+        }
         model.addAttribute("usuario", null);
         model.addAttribute("error", "Selecciona la categoría y la ubicación del recurso.");
         model.addAttribute("recurso", recurso);
@@ -116,6 +119,9 @@ public class RecursoController {
     private void servicioGuardar(Recurso recurso) {
         if (recurso.getEstado() == null || recurso.getEstado().isBlank()) {
             recurso.setEstado("Disponible");
+        }
+        if (recurso.getClase() == null) {
+            recurso.setClase(Recurso.Clase.ESPACIO);
         }
         service.guardar(recurso);
     }

@@ -6,6 +6,21 @@ import jakarta.persistence.*;
 @Table(name = "recursos")
 public class Recurso {
 
+    public enum Clase {
+        EQUIPO("Equipo"),
+        ESPACIO("Espacio o sala");
+
+        private final String etiqueta;
+
+        Clase(String etiqueta) {
+            this.etiqueta = etiqueta;
+        }
+
+        public String getEtiqueta() {
+            return etiqueta;
+        }
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idRecurso;
@@ -23,6 +38,10 @@ public class Recurso {
 
     @Column(nullable = false)
     private String estado;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Clase clase;
 
     // Relación muchos recursos pertenecen a una categoría
     @ManyToOne
@@ -98,6 +117,14 @@ public class Recurso {
 
     public void setEstado(String estado) {
         this.estado = estado;
+    }
+
+    public Clase getClase() {
+        return clase;
+    }
+
+    public void setClase(Clase clase) {
+        this.clase = clase;
     }
 
     public Categoria getCategoria() {

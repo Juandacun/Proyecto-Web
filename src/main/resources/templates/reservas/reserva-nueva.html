@@ -25,10 +25,10 @@
         </div>
 
         <div class="field">
-          <label for="recursoId">Recurso</label>
+          <label for="recursoId">Espacio o sala</label>
           <select id="recursoId" th:field="*{recursoId}">
-            <option value="">Selecciona un recurso</option>
-            <option th:each="r : ${recursos}" th:value="${r.idRecurso}" th:text="${r.nombre}">Recurso</option>
+            <option value="">Selecciona un espacio</option>
+            <option th:each="r : ${recursos}" th:value="${r.idRecurso}" th:text="${r.nombre}">Espacio</option>
           </select>
         </div>
 

@@ -72,6 +72,10 @@ public class PrestamoGestionController {
             vistaFormulario(form, "No se puede prestar un recurso que no esté disponible (bloqueado o ya prestado).", model);
             return "prestamos/prestamo-entrega";
         }
+        if (recurso.getClase() != Recurso.Clase.EQUIPO) {
+            vistaFormulario(form, "Solo se prestan equipos: las salas y espacios se apartan mediante una reserva.", model);
+            return "prestamos/prestamo-entrega";
+        }
 
         Prestamo prestamo = new Prestamo(recurso, form.documento(),
                 LocalDate.parse(form.fechaEntrega()),
@@ -129,7 +133,7 @@ public class PrestamoGestionController {
     private void vistaFormulario(PrestamoForm form, String error, Model model) {
         model.addAttribute("usuario", null);
         model.addAttribute("prestamo", form);
-        model.addAttribute("recursos", recursoService.listar());
+        model.addAttribute("recursos", recursoService.listarEquipos());
         model.addAttribute("estadosEquipo", ESTADOS_EQUIPO);
         model.addAttribute("error", error);
     }

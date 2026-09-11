@@ -21,6 +21,8 @@ public interface RecursoRepository extends JpaRepository<Recurso, Long>{
 
     List<Recurso> findByTipo(String tipo);
 
+    List<Recurso> findByClase(Recurso.Clase clase);
+
     List<Recurso> findByCategoriaIdCategoria(Long idCategoria);
 
     List<Recurso> findByUbicacionIdUbicacion(Long idUbicacion);

@@ -24,6 +24,15 @@
           <input id="nombre" type="text" th:field="*{nombre}" required>
         </div>
 
+        <div class="field">
+          <label for="clase">Tipo de recurso</label>
+          <select id="clase" th:field="*{clase}" required>
+            <option value="">Selecciona el tipo de recurso</option>
+            <option value="EQUIPO">Equipo (se presta)</option>
+            <option value="ESPACIO">Espacio o sala (se reserva)</option>
+          </select>
+        </div>
+
         <div class="field-row">
           <div class="field">
             <label for="tipo">Tipo</label>

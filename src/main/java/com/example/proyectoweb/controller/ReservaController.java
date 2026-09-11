@@ -108,6 +108,9 @@ public class ReservaController {
         if (recurso == null) {
             return "El recurso seleccionado ya no existe.";
         }
+        if (recurso.getClase() != Recurso.Clase.ESPACIO) {
+            return "Solo se reservan espacios y salas: los equipos se solicitan mediante un préstamo.";
+        }
         if (form.horaInicio().compareTo(form.horaFin()) >= 0) {
             return "La hora de inicio debe ser anterior a la hora de fin.";
         }
@@ -133,7 +136,7 @@ public class ReservaController {
                                  String exito, Model model) {
         model.addAttribute("usuario", null);
         model.addAttribute("reserva", form);
-        model.addAttribute("recursos", recursoService.listar());
+        model.addAttribute("recursos", recursoService.listarEspacios());
         model.addAttribute("modo", modo);
         model.addAttribute("reservaId", reservaId);
         model.addAttribute("error", error);

@@ -51,25 +51,25 @@ public class DevDataSeeder implements CommandLineRunner {
                 "Espacios deportivos del campus");
 
         recurso(audiovisual, auditorio, "Vídeo beam Epson PowerLite", "Equipo audiovisual",
-                "Proyector para aulas y auditorios", "Full HD, HDMI, VGA", "Disponible");
+                "Proyector para aulas y auditorios", "Full HD, HDMI, VGA", "Disponible", Recurso.Clase.EQUIPO);
         recurso(aulas, ingenieria, "Salón 201", "Aula",
-                "Salón para 45 estudiantes", "Tablero acrílico, videobeam", "Disponible");
+                "Salón para 45 estudiantes", "Tablero acrílico, videobeam", "Disponible", Recurso.Clase.ESPACIO);
         recurso(auditorios, auditorio, "Aula máxima 101", "Auditorio",
-                "Aula máxima con capacidad de 200 personas", "Sonido, micrófonos", "Reservado");
+                "Aula máxima con capacidad de 200 personas", "Sonido, micrófonos", "Reservado", Recurso.Clase.ESPACIO);
         recurso(laboratorios, ciencias, "Laboratorio de Química Orgánica", "Laboratorio",
-                "Laboratorio de prácticas de química", "Campanas de extracción, mesones", "En mantenimiento");
+                "Laboratorio de prácticas de química", "Campanas de extracción, mesones", "En mantenimiento", Recurso.Clase.ESPACIO);
         recurso(laboratorios, ciencias, "Laboratorio de Física", "Laboratorio",
-                "Laboratorio de prácticas de física", "Mesas de experimentación", "Disponible");
+                "Laboratorio de prácticas de física", "Mesas de experimentación", "Disponible", Recurso.Clase.ESPACIO);
         recurso(computo, biblioteca, "Computador Dell OptiPlex", "Equipo de cómputo",
-                "Computador de uso académico", "8 GB RAM, i5", "Disponible");
+                "Computador de uso académico", "8 GB RAM, i5", "Disponible", Recurso.Clase.EQUIPO);
         recurso(aulas, biblioteca, "Sala de estudio grupal 3", "Salón",
-                "Sala para trabajo en grupo", "Capacidad 8 personas", "Disponible");
+                "Sala para trabajo en grupo", "Capacidad 8 personas", "Disponible", Recurso.Clase.ESPACIO);
         recurso(deportivos, polideportivo, "Cancha de fútbol", "Espacio deportivo",
-                "Cancha de césped sintético", "Iluminación nocturna", "Disponible");
+                "Cancha de césped sintético", "Iluminación nocturna", "Disponible", Recurso.Clase.ESPACIO);
         recurso(audiovisual, auditorio, "Micrófonos inalámbricos SHURE", "Equipo audiovisual",
-                "Set de micrófonos para auditorio", "Set de 4 unidades", "En préstamo");
+                "Set de micrófonos para auditorio", "Set de 4 unidades", "En préstamo", Recurso.Clase.EQUIPO);
         recurso(audiovisual, ingenieria, "Tablero digital interactivo", "Equipo audiovisual",
-                "Pantalla táctil para docencia", "85 pulgadas, HDMI", "Disponible");
+                "Pantalla táctil para docencia", "85 pulgadas, HDMI", "Disponible", Recurso.Clase.EQUIPO);
     }
 
     private Categoria categoria(String nombre, String descripcion) {
@@ -81,8 +81,9 @@ public class DevDataSeeder implements CommandLineRunner {
     }
 
     private void recurso(Categoria categoria, Ubicacion ubicacion, String nombre, String tipo,
-                         String descripcion, String caracteristicas, String estado) {
+                         String descripcion, String caracteristicas, String estado, Recurso.Clase clase) {
         Recurso recurso = new Recurso(nombre, tipo, descripcion, caracteristicas, estado);
+        recurso.setClase(clase);
         recurso.setCategoria(categoria);
         recurso.setUbicacion(ubicacion);
         recursoService.guardar(recurso);
