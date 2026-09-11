@@ -62,6 +62,7 @@ a:hover{color:#1D4ED8}
   font-family:inherit;font-weight:600;font-size:14px;line-height:17px;text-decoration:none;cursor:pointer;white-space:nowrap}
 .btn--primary{background:#2563EB;color:#fff}
 .btn--primary:hover{background:#1D4ED8;color:#fff}
+.btn--sm{padding:10px 18px;min-width:195px;font-size:14px;line-height:17px;border-radius:6px}
 .link-action{font-weight:600;font-size:12px;color:#2563EB;text-decoration:none}
 .link-action:hover{text-decoration:underline}
 .muted{color:#94A3B8;font-weight:500;font-size:12px}

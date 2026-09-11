@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/layout :: head('Categor&iacute;a')}"></head>
+<body>
+<div class="layout">
+  <aside th:replace="~{fragments/layout :: sidebar('admin')}"></aside>
+  <div class="main">
+    <header th:replace="~{fragments/layout :: topbar('Categor&iacute;a', ${usuario})}"></header>
+
+    <section class="content content--center">
+      <form class="form-card" method="post"
+            th:action="@{${categoria.idCategoria == null} ? '/categorias/guardar' : '/categorias/actualizar'}"
+            th:object="${categoria}">
+        <h1 class="form-card__title" th:text="${categoria.idCategoria == null} ? 'Nueva categor&iacute;a' : 'Editar categor&iacute;a'">Categor&iacute;a</h1>
+        <p class="form-card__sub">Define un nombre corto y una descripci&oacute;n para agrupar recursos.</p>
+
+        <div class="field">
+          <label for="nombre">Nombre</label>
+          <input id="nombre" type="text" th:field="*{nombre}">
+        </div>
+
+        <div class="field">
+          <label for="descripcion">Descripci&oacute;n</label>
+          <input id="descripcion" type="text" th:field="*{descripcion}">
+        </div>
+
+        <div class="form-actions">
+          <a class="btn btn--ghost" th:href="@{/categorias}">Cancelar</a>
+          <button class="btn btn--primary" type="submit">Guardar</button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
+</body>
+</html>

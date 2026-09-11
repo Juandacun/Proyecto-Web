@@ -17,11 +17,16 @@
           <h2 class="card__title">Reportar novedad</h2>
           <p class="card__note">Un incidente cr&iacute;tico puede bloquear el recurso hasta su revisi&oacute;n</p>
 
+          <div class="alerta alerta--error" th:if="${error != null}">
+            <span class="alerta__icono">&#9888;</span>
+            <span th:text="${error}">Error.</span>
+          </div>
+
           <div class="field">
             <label for="recursoId">Recurso</label>
             <select id="recursoId" th:field="*{recursoId}">
               <option value="">Selecciona un recurso</option>
-              <option th:each="r : ${recursos}" th:value="${r.id}" th:text="${r.nombre}">Recurso</option>
+              <option th:each="r : ${recursos}" th:value="${r.idRecurso}" th:text="${r.nombre}">Recurso</option>
             </select>
           </div>
 
@@ -62,6 +67,7 @@
               <tr>
                 <th class="col-equipo">Equipo</th>
                 <th>Tipo</th>
+                <th>Descripci&oacute;n</th>
                 <th class="ta-right">Severidad</th>
                 <th class="ta-right">Fecha</th>
               </tr>
@@ -70,6 +76,7 @@
               <tr th:each="i : ${incidentes}">
                 <td class="td-equipo" th:text="${i.recurso}">Equipo</td>
                 <td th:text="${i.tipo}">Tipo</td>
+                <td th:text="${i.descripcion}">Descripci&oacute;n</td>
                 <td class="ta-right">
                   <span th:replace="~{fragments/layout :: tag(${i.severidad}, ${i.severidadColor})}"></span>
                 </td>
@@ -77,7 +84,7 @@
                     th:text="${#temporals.format(i.fecha, 'dd/MM/yyyy')}">dd/mm/aaaa</td>
               </tr>
               <tr th:if="${#lists.isEmpty(incidentes)}">
-                <td class="empty" colspan="4">No hay incidentes reportados.</td>
+                <td class="empty" colspan="5">No hay incidentes reportados.</td>
               </tr>
             </tbody>
           </table>

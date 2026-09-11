@@ -10,10 +10,13 @@
     <header th:replace="~{fragments/layout :: topbar('Mis préstamos', ${usuario})}"></header>
 
     <section class="content">
+      <div class="page-head">
       <div class="intro">
         <h1>Mis préstamos</h1>
         <p>Consulta el estado de los equipos que has solicitado en préstamo y su fecha límite de devolución.</p>
       </div>
+      <a class="btn btn--primary" th:href="@{/prestamos/nuevo}">Registrar préstamo</a>
+    </div>
 
       <div class="card">
         <table class="tabla">
@@ -28,14 +31,14 @@
           </thead>
           <tbody>
           <tr th:each="p : ${prestamos}">
-            <td class="td-equipo" th:text="${p.equipo}">Equipo</td>
-            <td class="td-fecha" th:text="${#temporals.format(p.fechaEntrada, 'dd/MM/yyyy')}">dd/mm/aaaa</td>
-            <td class="td-fecha" th:text="${#temporals.format(p.fechaLimite, 'dd/MM/yyyy')}">dd/mm/aaaa</td>
+            <td class="td-equipo" th:text="${p.recurso}">Equipo</td>
+            <td class="td-fecha" th:text="${#temporals.format(p.fechaEntrega, 'dd/MM/yyyy')}">dd/mm/aaaa</td>
+            <td class="td-fecha" th:text="${#temporals.format(p.fechaDevolucionEstimada, 'dd/MM/yyyy')}">dd/mm/aaaa</td>
             <td>
               <span th:replace="~{fragments/layout :: tag(${p.estado}, ${p.estadoColor})}">Estado</span>
             </td>
             <td class="ta-right">
-              <span th:replace="~{fragments/layout :: tag(${p.devolucion}, ${p.devolucionColor})}">Devolución</span>
+              <span th:replace="~{fragments/layout :: tag(${p.puntualidad}, ${p.puntualidadColor})}">Devolución</span>
             </td>
           </tr>
           <tr th:if="${#lists.isEmpty(prestamos)}">

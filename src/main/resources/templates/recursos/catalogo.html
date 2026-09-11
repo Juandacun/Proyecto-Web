@@ -20,6 +20,11 @@
 
       <!-- Filtros -->
       <form class="filtros" method="get" th:action="@{/catalogo}">
+        <div class="field field--buscar">
+          <label for="q">Buscar</label>
+          <input id="q" type="search" name="q" th:value="${filtro?.q}"
+                 placeholder="Nombre, categoría, ubicación, tipo...">
+        </div>
         <div class="field">
           <label for="categoria">Categoría</label>
           <select id="categoria" name="categoria">
@@ -52,6 +57,10 @@
                     th:selected="${e == filtro?.estado}">Estado</option>
           </select>
         </div>
+        <div class="field field--acciones">
+          <button class="btn btn--primary" type="submit">Filtrar</button>
+          <a class="btn btn--ghost" th:href="@{/catalogo}">Limpiar</a>
+        </div>
       </form>
 
       <!-- Grid de recursos -->
@@ -67,7 +76,14 @@
               <span th:replace="~{fragments/layout :: tag(${r.estado}, ${r.estadoColor})}">Estado</span>
             </div>
             <span class="recurso__meta" th:text="${r.categoria} + ' · ' + ${r.ubicacion}">Categoría · Ubicación</span>
-            <a class="recurso__link" th:href="@{/catalogo/{id}/disponibilidad(id=${r.id})}">Ver disponibilidad</a>
+            <div class="recurso__acciones">
+              <a th:if="${r.disponible}"
+                 th:text="${r.accion}"
+                 class="btn btn--primary btn--sm"
+                 th:href="@{${r.accionUrl}}">Acción</a>
+              <span th:unless="${r.disponible}" class="muted">No disponible</span>
+              <a class="recurso__link" th:href="@{/catalogo/{id}/disponibilidad(id=${r.id})}">Ver disponibilidad</a>
+            </div>
           </div>
         </article>
 

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/layout :: head('Ubicaciones')}"></head>
+<body>
+<div class="layout">
+  <aside th:replace="~{fragments/layout :: sidebar('admin')}"></aside>
+  <div class="main">
+    <header th:replace="~{fragments/layout :: topbar('Ubicaciones', ${usuario})}"></header>
+
+    <section class="content">
+      <div class="intro intro--tight">
+        <h1>Administraci&oacute;n de ubicaciones</h1>
+        <p>Gestiona los espacios y edificios donde se alojan los recursos.</p>
+      </div>
+
+      <div class="card">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th class="col-equipo">Nombre</th>
+              <th>Edificio</th>
+              <th>Descripci&oacute;n</th>
+              <th class="ta-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="u : ${ubicaciones}">
+              <td class="td-equipo" th:text="${u.nombre}">Ubicaci&oacute;n</td>
+              <td class="td-diagnostico" th:text="${u.edificio}">Edificio</td>
+              <td class="td-diagnostico" th:text="${u.descripcion}">Descripci&oacute;n</td>
+              <td class="ta-right acciones">
+                <a class="link-action" th:href="@{/ubicaciones/editar/{id}(id=${u.idUbicacion})}">Editar</a>
+                <form class="inline-form" method="get" th:action="@{/ubicaciones/eliminar/{id}(id=${u.idUbicacion})}">
+                  <button class="link-action link-action--danger" type="submit">Eliminar</button>
+                </form>
+              </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(ubicaciones)}">
+              <td class="empty" colspan="4">No hay ubicaciones registradas.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <a class="btn btn--primary btn--sm" th:href="@{/ubicaciones/nuevo}">+ Nueva ubicaci&oacute;n</a>
+    </section>
+  </div>
+</div>
+</body>
+</html>
