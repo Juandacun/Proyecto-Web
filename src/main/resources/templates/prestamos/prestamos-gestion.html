@@ -28,6 +28,7 @@
             <th>Responsable</th>
             <th class="ta-right">Estado</th>
             <th class="ta-right">Devolución</th>
+            <th class="ta-right">Puntualidad</th>
             <th class="ta-right">Acción</th>
           </tr>
           </thead>
@@ -41,18 +42,21 @@
               <span th:replace="~{fragments/layout :: tag(${p.estado}, ${p.estadoColor})}">Estado</span>
             </td>
             <td class="ta-right">
-              <span th:if="${p.devolucion != null}"
-                    th:replace="~{fragments/layout :: tag(${p.devolucion}, ${p.devolucionColor})}">Devolución</span>
-              <span th:if="${p.devolucion == null}" class="muted">&mdash;</span>
+              <span th:if="${p.fechaDevolucion != null}" class="td-fecha"
+                    th:text="${#temporals.format(p.fechaDevolucion, 'dd/MM/yyyy')}">&mdash;</span>
+              <span th:if="${p.fechaDevolucion == null}" class="muted">&mdash;</span>
             </td>
             <td class="ta-right">
-              <a th:if="${p.devolucion == null}" class="link-action"
+              <span th:replace="~{fragments/layout :: tag(${p.puntualidad}, ${p.puntualidadColor})}">Puntualidad</span>
+            </td>
+            <td class="ta-right">
+              <a th:if="${p.fechaDevolucion == null}" class="link-action"
                  th:href="@{/prestamos/{id}/devolucion(id=${p.id})}">Registrar devolución</a>
-              <span th:if="${p.devolucion != null}" class="muted">&mdash;</span>
+              <span th:if="${p.fechaDevolucion != null}" class="muted">&mdash;</span>
             </td>
           </tr>
           <tr th:if="${#lists.isEmpty(prestamos)}">
-            <td colspan="7" class="empty">No hay préstamos registrados.</td>
+            <td colspan="8" class="empty">No hay préstamos registrados.</td>
           </tr>
           </tbody>
         </table>

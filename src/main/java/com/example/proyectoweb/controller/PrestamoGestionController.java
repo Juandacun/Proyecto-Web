@@ -31,7 +31,7 @@ public class PrestamoGestionController {
 
     public record PrestamoVM(Long id, String recurso, LocalDate fechaEntrega, LocalDate fechaDevolucionEstimada,
                              String horario, String responsable, String estado, String estadoColor,
-                             String devolucion, String devolucionColor) {}
+                             LocalDate fechaDevolucion, String puntualidad, String puntualidadColor) {}
 
     @GetMapping("/prestamos")
     public String prestamos(Model model) {
@@ -103,20 +103,27 @@ public class PrestamoGestionController {
                 .map(p -> new PrestamoVM(p.getIdPrestamo(), p.getRecurso().getNombre(),
                         p.getFechaEntrega(), p.getFechaDevolucionEstimada(), "—",
                         p.getDocumento(), p.getEstado(), Prestamo.colorDeEstado(p.getEstado()),
-                        devolucionTexto(p), devolucionColor(p)))
+                        p.getFechaDevolucion(), puntualidadTexto(p), puntualidadColor(p)))
                 .toList();
     }
 
-    private String devolucionTexto(Prestamo p) {
-        if (p.getEstado().equals("Devuelto") && p.getFechaDevolucion() != null) {
+    private String puntualidadTexto(Prestamo p) {
+        if ("Devuelto".equals(p.getEstado()) && p.getFechaDevolucion() != null) {
             return p.getFechaDevolucion().isAfter(p.getFechaDevolucionEstimada())
-                    ? "Tardío" : "A tiempo";
+                    ? "Tardía" : "A tiempo";
         }
-        return null;
+        return "Pendiente";
     }
 
-    private String devolucionColor(Prestamo p) {
-        return "Tardío".equals(devolucionTexto(p)) ? "rojo" : "verde";
+    private String puntualidadColor(Prestamo p) {
+        switch (puntualidadTexto(p)) {
+            case "Tardía":
+                return "rojo";
+            case "A tiempo":
+                return "verde";
+            default:
+                return "gris";
+        }
     }
 
     private void vistaFormulario(PrestamoForm form, String error, Model model) {
