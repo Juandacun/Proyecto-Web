@@ -93,15 +93,9 @@ public class Incidente {
         if (s.contains("critic")) {
             return "rojo";
         }
-        if (s.contains("alta")) {
-            return "ambar";
-        }
-        if (s.contains("media")) {
-            return "azul";
-        }
-        if (s.contains("baja")) {
+        if (s.contains("leve")) {
             return "verde";
         }
-        return "gris";
+        return "azul";
     }
 }

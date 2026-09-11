@@ -22,7 +22,7 @@ public class IncidenteController {
             "Accesorios faltantes", "Limpieza", "Otro");
 
     private static final List<String> SEVERIDADES = List.of(
-            "Baja", "Media", "Alta", "Crítica");
+            "Leve", "Media", "Crítica");
 
     @Autowired
     private IncidenteService incidenteService;
@@ -45,6 +45,9 @@ public class IncidenteController {
         if (form.recursoId() == null || form.recursoId().isBlank()) {
             return vista(form, "Selecciona el recurso afectado.", model);
         }
+        if (form.descripcion() == null || form.descripcion().isBlank()) {
+            return vista(form, "Describe la novedad o falla del recurso.", model);
+        }
 
         Recurso recurso = recursoService.buscarPorId(Long.valueOf(form.recursoId()));
         if (recurso == null) {
@@ -54,6 +57,11 @@ public class IncidenteController {
         Incidente incidente = new Incidente(recurso, form.tipo(), form.severidad(),
                 form.descripcion(), LocalDateTime.now());
         incidenteService.guardar(incidente);
+
+        if ("Crítica".equals(form.severidad())) {
+            recurso.setEstado("Bloqueado");
+            recursoService.actualizar(recurso);
+        }
         return "redirect:/incidentes";
     }
 

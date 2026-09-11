@@ -25,7 +25,8 @@ public class CatalogoController {
     private UbicacionService ubicacionService;
 
     public record RecursoVM(Long id, String nombre, String estado, String estadoColor, String imagen,
-                            String categoria, String ubicacion) {}
+                            String categoria, String ubicacion, String clase, boolean disponible,
+                            String accion, String accionUrl) {}
 
     public record Filtro(String q, String categoria, String ubicacion, String tipo, String estado) {}
 
@@ -54,7 +55,8 @@ public class CatalogoController {
 
         List<RecursoVM> recursosVM = recursos.stream()
                 .map(r -> new RecursoVM(r.getIdRecurso(), r.getNombre(), r.getEstado(), r.getEstadoColor(), null,
-                        r.getCategoria().getNombre(), r.getUbicacion().getNombre()))
+                        r.getCategoria().getNombre(), r.getUbicacion().getNombre(), r.getClase().name(),
+                        !bloqueado(r.getEstado()), accion(r), accionUrl(r)))
                 .toList();
 
         model.addAttribute("usuario", null);
@@ -77,6 +79,21 @@ public class CatalogoController {
     private static String normalizar(String s) {
         String n = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD);
         return n.replaceAll("\\p{M}", "").toLowerCase();
+    }
+
+    private static boolean bloqueado(String estado) {
+        String e = normalizar(estado);
+        return e.contains("prestam") || e.contains("mantenimiento")
+                || e.contains("fuera de servicio") || e.contains("bloquead")
+                || e.contains("diario");
+    }
+
+    private static String accion(Recurso r) {
+        return r.getClase() == Recurso.Clase.EQUIPO ? "Prestar" : "Reservar";
+    }
+
+    private static String accionUrl(Recurso r) {
+        return r.getClase() == Recurso.Clase.EQUIPO ? "/prestamos/nuevo" : "/reservas/nueva";
     }
 
     @GetMapping("/catalogo/nuevo")

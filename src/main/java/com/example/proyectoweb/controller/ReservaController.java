@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -29,7 +30,8 @@ public class ReservaController {
     public record ReservaForm(String recursoId, String fecha, String horaInicio, String horaFin, String motivo) {}
 
     public record ReservaVM(Long id, String recurso, LocalDate fecha, LocalTime horaInicio, LocalTime horaFin,
-                            String solicitante, String estado, String estadoColor, boolean modificable) {}
+                            String solicitante, String estado, String estadoColor, boolean modificable,
+                            boolean finalizable) {}
 
     @GetMapping("/reservas")
     public String reservas(Model model) {
@@ -38,7 +40,7 @@ public class ReservaController {
                 .map(r -> new ReservaVM(r.getIdReserva(), r.getRecurso().getNombre(), r.getFecha(),
                         LocalTime.parse(r.getHoraInicio()), LocalTime.parse(r.getHoraFin()),
                         r.getSolicitante(), r.getEstado(), Reserva.colorDeEstado(r.getEstado()),
-                        !"Cancelada".equals(r.getEstado())))
+                        esModificable(r), esFinalizable(r)))
                 .toList());
         return "reservas/reservas";
     }
@@ -93,6 +95,19 @@ public class ReservaController {
         if (reserva != null) {
             reserva.setEstado("Cancelada");
             reservaService.actualizar(reserva);
+            liberarSiSinReservas(reserva);
+        }
+        return "redirect:/reservas";
+    }
+
+    @PostMapping("/reservas/{id}/finalizar")
+    public String finalizar(@PathVariable Long id) {
+        Reserva reserva = reservaService.buscarPorId(id);
+        if (reserva != null && !"Finalizada".equals(reserva.getEstado())
+                && !"Cancelada".equals(reserva.getEstado())) {
+            reserva.setEstado("Finalizada");
+            reservaService.actualizar(reserva);
+            liberarSiSinReservas(reserva);
         }
         return "redirect:/reservas";
     }
@@ -110,6 +125,9 @@ public class ReservaController {
         }
         if (recurso.getClase() != Recurso.Clase.ESPACIO) {
             return "Solo se reservan espacios y salas: los equipos se solicitan mediante un préstamo.";
+        }
+        if (bloqueado(recurso)) {
+            return "El recurso está bloqueado, prestado o en mantenimiento y no se puede reservar.";
         }
         if (form.horaInicio().compareTo(form.horaFin()) >= 0) {
             return "La hora de inicio debe ser anterior a la hora de fin.";
@@ -129,7 +147,39 @@ public class ReservaController {
             return "Ya existe una reserva para ese recurso en ese horario.";
         }
         reservaService.guardar(reserva);
+        recurso.setEstado("Reservado");
+        recursoService.actualizar(recurso);
         return null;
+    }
+
+    private boolean bloqueado(Recurso recurso) {
+        String e = java.text.Normalizer.normalize(recurso.getEstado(), java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "").toLowerCase();
+        return e.contains("prestam") || e.contains("mantenimiento")
+                || e.contains("fuera de servicio") || e.contains("bloquead");
+    }
+
+    private boolean esModificable(Reserva r) {
+        return "Confirmada".equals(r.getEstado())
+                && LocalDateTime.of(r.getFecha(), LocalTime.parse(r.getHoraInicio())).isAfter(LocalDateTime.now());
+    }
+
+    private boolean esFinalizable(Reserva r) {
+        return "Confirmada".equals(r.getEstado())
+                && LocalDateTime.of(r.getFecha(), LocalTime.parse(r.getHoraFin())).isBefore(LocalDateTime.now());
+    }
+
+    private void liberarSiSinReservas(Reserva reserva) {
+        boolean tieneOtras = reservaService.listar().stream()
+                .anyMatch(r -> r.getRecurso().getIdRecurso().equals(reserva.getRecurso().getIdRecurso())
+                        && !r.getIdReserva().equals(reserva.getIdReserva())
+                        && !"Cancelada".equals(r.getEstado())
+                        && !"Finalizada".equals(r.getEstado()));
+        if (!tieneOtras) {
+            Recurso recurso = reserva.getRecurso();
+            recurso.setEstado("Disponible");
+            recursoService.actualizar(recurso);
+        }
     }
 
     private void vistaFormulario(ReservaForm form, String modo, Long reservaId, String error,

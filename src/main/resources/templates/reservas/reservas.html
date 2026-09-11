@@ -49,7 +49,12 @@
                     <button class="link-action link-action--danger" type="submit">Cancelar</button>
                   </form>
                 </th:block>
-                <span class="muted" th:unless="${r.modificable}">&mdash;</span>
+                <th:block th:if="${r.finalizable}">
+                  <form class="inline-form" method="post" th:action="@{/reservas/{id}/finalizar(id=${r.id})}">
+                    <button class="link-action" type="submit">Finalizar</button>
+                  </form>
+                </th:block>
+                <span class="muted" th:unless="${r.modificable || r.finalizable}">&mdash;</span>
               </td>
             </tr>
             <tr th:if="${#lists.isEmpty(reservas)}">
