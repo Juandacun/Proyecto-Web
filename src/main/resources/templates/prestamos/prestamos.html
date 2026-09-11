@@ -10,10 +10,13 @@
     <header th:replace="~{fragments/layout :: topbar('Mis préstamos', ${usuario})}"></header>
 
     <section class="content">
+      <div class="page-head">
       <div class="intro">
         <h1>Mis préstamos</h1>
         <p>Consulta el estado de los equipos que has solicitado en préstamo y su fecha límite de devolución.</p>
       </div>
+      <a class="btn btn--primary" th:href="@{/prestamos/nuevo}">Registrar préstamo</a>
+    </div>
 
       <div class="card">
         <table class="tabla">
