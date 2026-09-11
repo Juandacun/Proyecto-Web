@@ -106,7 +106,7 @@ public class RecursoController {
             recurso.setEstado("Disponible");
         }
         model.addAttribute("usuario", null);
-        model.addAttribute("error", "Selecciona la categor&iacute;a y la ubicaci&oacute;n del recurso.");
+        model.addAttribute("error", "Selecciona la categoría y la ubicación del recurso.");
         model.addAttribute("recurso", recurso);
         model.addAttribute("categorias", categoriaService.listar());
         model.addAttribute("ubicaciones", ubicacionService.listar());
