@@ -19,20 +19,7 @@
         <a class="tab" th:href="@{/admin(tab='ubicaciones')}" th:classappend="${tab == 'ubicaciones'} ? ' is-active'">Ubicaciones</a>
       </div>
 
-      <form class="filtros" method="get" th:action="@{/admin}">
-        <input type="hidden" name="tab" th:value="${tab}">
-        <div class="field field--buscar">
-          <label for="buscar">Buscar recurso</label>
-          <input id="buscar" type="search" name="buscar" th:value="${buscar}"
-                 placeholder="Nombre, categoría, ubicación, tipo...">
-        </div>
-        <div class="field field--acciones">
-          <button class="btn btn--primary btn--sm" type="submit">Buscar</button>
-          <a class="btn btn--ghost btn--sm" th:href="@{/admin(tab=${tab})}">Limpiar</a>
-        </div>
-      </form>
-
-      <div class="card">
+      <div class="card" th:if="${tab == 'recursos'}">
         <table class="tabla">
           <thead>
             <tr>
@@ -67,7 +54,65 @@
         </table>
       </div>
 
-      <a class="btn btn--primary btn--sm" th:href="@{/recursos/nuevo}">+ Nuevo recurso</a>
+      <div class="card" th:if="${tab == 'categorias'}">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th class="col-equipo">Categor&iacute;a</th>
+              <th>Descripci&oacute;n</th>
+              <th class="ta-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="c : ${categorias}">
+              <td class="td-equipo" th:text="${c.nombre}">Categor&iacute;a</td>
+              <td class="td-diagnostico" th:text="${c.descripcion}">Descripci&oacute;n</td>
+              <td class="ta-right acciones">
+                <a class="link-action" th:href="@{/categorias/editar/{id}(id=${c.id})}">Editar</a>
+                <form class="inline-form" method="post" th:action="@{/admin/categorias/{id}/eliminar(id=${c.id})}">
+                  <button class="link-action link-action--danger" type="submit">Eliminar</button>
+                </form>
+              </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(categorias)}">
+              <td class="empty" colspan="3">No hay categor&iacute;as registradas.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card" th:if="${tab == 'ubicaciones'}">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th class="col-equipo">Ubicaci&oacute;n</th>
+              <th>Edificio</th>
+              <th>Descripci&oacute;n</th>
+              <th class="ta-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="u : ${ubicaciones}">
+              <td class="td-equipo" th:text="${u.nombre}">Ubicaci&oacute;n</td>
+              <td th:text="${u.edificio}">Edificio</td>
+              <td class="td-diagnostico" th:text="${u.descripcion}">Descripci&oacute;n</td>
+              <td class="ta-right acciones">
+                <a class="link-action" th:href="@{/ubicaciones/editar/{id}(id=${u.id})}">Editar</a>
+                <form class="inline-form" method="post" th:action="@{/admin/ubicaciones/{id}/eliminar(id=${u.id})}">
+                  <button class="link-action link-action--danger" type="submit">Eliminar</button>
+                </form>
+              </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(ubicaciones)}">
+              <td class="empty" colspan="4">No hay ubicaciones registradas.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <a class="btn btn--primary btn--sm"
+         th:href="${tab == 'categorias'} ? @{/categorias/nuevo} : (${tab == 'ubicaciones'} ? @{/ubicaciones/nuevo} : @{/recursos/nuevo})"
+         th:text="${tab == 'categorias'} ? '+ Nueva categoría' : (${tab == 'ubicaciones'} ? '+ Nueva ubicación' : '+ Nuevo recurso')">+ Nuevo recurso</a>
     </section>
   </div>
 </div>
