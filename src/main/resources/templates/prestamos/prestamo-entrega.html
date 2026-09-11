@@ -25,19 +25,19 @@
           </select>
         </div>
 
-        <div class="field">
-          <label for="documento">Documento o c&oacute;digo del estudiante</label>
-          <input id="documento" type="text" th:field="*{documento}" placeholder="Documento del estudiante">
+<div class="field">
+            <label for="documento">Documento o c&oacute;digo del estudiante</label>
+            <input id="documento" type="text" th:field="*{documento}" placeholder="Documento del estudiante" required>
         </div>
 
         <div class="field-row">
           <div class="field">
             <label for="fechaEntrega">Fecha de entrega</label>
-            <input id="fechaEntrega" type="date" th:field="*{fechaEntrega}">
+            <input id="fechaEntrega" type="date" th:field="*{fechaEntrega}" required>
           </div>
           <div class="field">
             <label for="fechaDevolucion">Devoluci&oacute;n estimada</label>
-            <input id="fechaDevolucion" type="date" th:field="*{fechaDevolucionEstimada}">
+            <input id="fechaDevolucion" type="date" th:field="*{fechaDevolucionEstimada}" required>
           </div>
         </div>
 

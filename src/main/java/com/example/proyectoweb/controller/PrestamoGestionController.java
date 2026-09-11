@@ -57,8 +57,9 @@ public class PrestamoGestionController {
     public String registrar(@ModelAttribute PrestamoForm form, Model model) {
         if (form.recursoId() == null || form.recursoId().isBlank()
                 || form.documento() == null || form.documento().isBlank()
-                || form.fechaEntrega() == null || form.fechaEntrega().isBlank()) {
-            vistaFormulario(form, "Completa el equipo, el documento y la fecha de entrega.", model);
+                || form.fechaEntrega() == null || form.fechaEntrega().isBlank()
+                || form.fechaDevolucionEstimada() == null || form.fechaDevolucionEstimada().isBlank()) {
+            vistaFormulario(form, "Completa el equipo, el documento y las fechas de entrega y devolución.", model);
             return "prestamos/prestamo-entrega";
         }
 
