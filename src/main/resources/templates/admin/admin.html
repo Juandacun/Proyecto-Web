@@ -19,6 +19,19 @@
         <a class="tab" th:href="@{/admin(tab='ubicaciones')}" th:classappend="${tab == 'ubicaciones'} ? ' is-active'">Ubicaciones</a>
       </div>
 
+      <form class="filtros" method="get" th:action="@{/admin}">
+        <input type="hidden" name="tab" th:value="${tab}">
+        <div class="field field--buscar">
+          <label for="buscar">Buscar recurso</label>
+          <input id="buscar" type="search" name="buscar" th:value="${buscar}"
+                 placeholder="Nombre, categoría, ubicación, tipo...">
+        </div>
+        <div class="field field--acciones">
+          <button class="btn btn--primary btn--sm" type="submit">Buscar</button>
+          <a class="btn btn--ghost btn--sm" th:href="@{/admin(tab=${tab})}">Limpiar</a>
+        </div>
+      </form>
+
       <div class="card">
         <table class="tabla">
           <thead>

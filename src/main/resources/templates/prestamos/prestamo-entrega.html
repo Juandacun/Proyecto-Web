@@ -21,7 +21,7 @@
           <label for="recursoId">Equipo a prestar</label>
           <select id="recursoId" th:field="*{recursoId}">
             <option value="">Selecciona un equipo</option>
-            <option th:each="r : ${recursos}" th:value="${r.id}" th:text="${r.nombre}">Recurso</option>
+            <option th:each="r : ${recursos}" th:value="${r.idRecurso}" th:text="${r.nombre}">Recurso</option>
           </select>
         </div>
 

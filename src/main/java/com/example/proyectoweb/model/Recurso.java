@@ -124,7 +124,8 @@ public class Recurso {
         if (estado == null) {
             return "gris";
         }
-        String e = estado.toLowerCase();
+        String e = java.text.Normalizer.normalize(estado, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "").toLowerCase();
         if (e.contains("disponible")) {
             return "verde";
         }

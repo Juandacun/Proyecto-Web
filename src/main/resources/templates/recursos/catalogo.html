@@ -20,6 +20,11 @@
 
       <!-- Filtros -->
       <form class="filtros" method="get" th:action="@{/catalogo}">
+        <div class="field field--buscar">
+          <label for="q">Buscar</label>
+          <input id="q" type="search" name="q" th:value="${filtro?.q}"
+                 placeholder="Nombre, categoría, ubicación, tipo...">
+        </div>
         <div class="field">
           <label for="categoria">Categoría</label>
           <select id="categoria" name="categoria">
@@ -51,6 +56,10 @@
             <option th:each="e : ${estados}" th:value="${e}" th:text="${e}"
                     th:selected="${e == filtro?.estado}">Estado</option>
           </select>
+        </div>
+        <div class="field field--acciones">
+          <button class="btn btn--primary" type="submit">Filtrar</button>
+          <a class="btn btn--ghost" th:href="@{/catalogo}">Limpiar</a>
         </div>
       </form>
 

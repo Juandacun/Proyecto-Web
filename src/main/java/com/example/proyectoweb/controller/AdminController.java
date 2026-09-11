@@ -23,16 +23,27 @@ public class AdminController {
 
     @GetMapping("/admin")
     public String admin(@RequestParam(name = "tab", required = false, defaultValue = "recursos") String tab,
+                        @RequestParam(name = "buscar", required = false) String buscar,
                         Model model) {
+        String b = buscar == null ? null : normalizar(buscar);
         List<RecursoVM> recursos = recursoService.listar().stream()
+                .filter(r -> b == null || b.isBlank()
+                        || normalizar(String.join(" ", r.getNombre(), r.getCategoria().getNombre(),
+                                r.getUbicacion().getNombre(), r.getTipo(), r.getEstado())).contains(b))
                 .map(r -> new RecursoVM(r.getIdRecurso(), r.getNombre(),
                         r.getCategoria().getNombre(), r.getUbicacion().getNombre(),
                         r.getTipo(), r.getEstado(), r.getEstadoColor()))
                 .toList();
         model.addAttribute("usuario", null);
         model.addAttribute("tab", tab);
+        model.addAttribute("buscar", buscar);
         model.addAttribute("recursos", recursos);
         return "admin/admin";
+    }
+
+    private static String normalizar(String s) {
+        String n = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD);
+        return n.replaceAll("\\p{M}", "").toLowerCase();
     }
 
     @PostMapping("/admin/recursos/{id}/eliminar")

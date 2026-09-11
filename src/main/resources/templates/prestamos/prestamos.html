@@ -28,9 +28,9 @@
           </thead>
           <tbody>
           <tr th:each="p : ${prestamos}">
-            <td class="td-equipo" th:text="${p.equipo}">Equipo</td>
-            <td class="td-fecha" th:text="${#temporals.format(p.fechaEntrada, 'dd/MM/yyyy')}">dd/mm/aaaa</td>
-            <td class="td-fecha" th:text="${#temporals.format(p.fechaLimite, 'dd/MM/yyyy')}">dd/mm/aaaa</td>
+            <td class="td-equipo" th:text="${p.recurso}">Equipo</td>
+            <td class="td-fecha" th:text="${#temporals.format(p.fechaEntrega, 'dd/MM/yyyy')}">dd/mm/aaaa</td>
+            <td class="td-fecha" th:text="${#temporals.format(p.fechaDevolucionEstimada, 'dd/MM/yyyy')}">dd/mm/aaaa</td>
             <td>
               <span th:replace="~{fragments/layout :: tag(${p.estado}, ${p.estadoColor})}">Estado</span>
             </td>
