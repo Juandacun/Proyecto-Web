@@ -33,7 +33,7 @@ public class IncidenteController {
     public record IncidenteForm(String recursoId, String tipo, String severidad, String descripcion) {}
 
     public record IncidenteVM(String recurso, String tipo, String severidad, String severidadColor,
-                              LocalDateTime fecha) {}
+                              String descripcion, LocalDateTime fecha) {}
 
     @GetMapping("/incidentes")
     public String incidentes(Model model) {
@@ -78,7 +78,7 @@ public class IncidenteController {
         model.addAttribute("error", error);
         model.addAttribute("incidentes", incidenteService.listar().stream()
                 .map(i -> new IncidenteVM(i.getRecurso().getNombre(), i.getTipo(), i.getSeveridad(),
-                        Incidente.colorDeSeveridad(i.getSeveridad()), i.getFecha()))
+                        Incidente.colorDeSeveridad(i.getSeveridad()), i.getDescripcion(), i.getFecha()))
                 .toList());
         return "incidentes/incidentes";
     }
