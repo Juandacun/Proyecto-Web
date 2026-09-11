@@ -8,8 +8,11 @@
     <header th:replace="~{fragments/layout :: topbar('Nueva reserva', ${usuario})}"></header>
 
     <section class="content content--center">
-      <form class="form-card" method="post" th:action="@{/reservas}" th:object="${reserva}">
-        <h1 class="form-card__title">Nueva reserva</h1>
+      <form class="form-card" method="post"
+            th:action="${modo == 'editar'} ? @{/reservas/actualizar} : @{/reservas}"
+            th:object="${reserva}">
+        <input type="hidden" name="id" th:value="${reservaId}" th:if="${modo == 'editar'}">
+        <h1 class="form-card__title" th:text="${modo == 'editar'} ? 'Modificar reserva' : 'Nueva reserva'">Nueva reserva</h1>
         <p class="form-card__sub">Selecciona el recurso, la fecha y el horario. El sistema valida que no exista otra reserva activa en el mismo intervalo.</p>
 
         <div class="alerta alerta--error" th:if="${error != null}">
@@ -25,7 +28,7 @@
           <label for="recursoId">Recurso</label>
           <select id="recursoId" th:field="*{recursoId}">
             <option value="">Selecciona un recurso</option>
-            <option th:each="r : ${recursos}" th:value="${r.id}" th:text="${r.nombre}">Recurso</option>
+            <option th:each="r : ${recursos}" th:value="${r.idRecurso}" th:text="${r.nombre}">Recurso</option>
           </select>
         </div>
 

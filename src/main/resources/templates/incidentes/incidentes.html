@@ -17,11 +17,16 @@
           <h2 class="card__title">Reportar novedad</h2>
           <p class="card__note">Un incidente cr&iacute;tico puede bloquear el recurso hasta su revisi&oacute;n</p>
 
+          <div class="alerta alerta--error" th:if="${error != null}">
+            <span class="alerta__icono">&#9888;</span>
+            <span th:text="${error}">Error.</span>
+          </div>
+
           <div class="field">
             <label for="recursoId">Recurso</label>
             <select id="recursoId" th:field="*{recursoId}">
               <option value="">Selecciona un recurso</option>
-              <option th:each="r : ${recursos}" th:value="${r.id}" th:text="${r.nombre}">Recurso</option>
+              <option th:each="r : ${recursos}" th:value="${r.idRecurso}" th:text="${r.nombre}">Recurso</option>
             </select>
           </div>
 
