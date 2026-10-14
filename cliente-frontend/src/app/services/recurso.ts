@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, Service } from '@angular/core';
-import { Observable } from 'rxjs/internal/Observable';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 
 @Injectable({
     providedIn: 'root'
@@ -19,5 +19,14 @@ export class RecursoService {
         }
         return this.http.get<any[]>(this.apiUrl, { params });
     }
+
+    listar(): Observable<any[]> {
+        return this.http.get<any[]>(this.apiUrl);
+    }
+
+    listarEquipos(): Observable<any[]> {
+        return this.http.get<any[]>(`${this.apiUrl}/equipos`);
+    }
 }
+
 

@@ -30,6 +30,27 @@ public class PrestamoDevolucionDTO {
         this.fechaDevolucion = fechaDevolucion;
     }
 
+    @com.fasterxml.jackson.annotation.JsonSetter("fechaDevolucion")
+    public void setFechaDevolucionFromString(Object value) {
+        if (value == null) {
+            this.fechaDevolucion = null;
+            return;
+        }
+        if (value instanceof LocalDate ld) {
+            this.fechaDevolucion = ld;
+            return;
+        }
+        String str = value.toString().trim();
+        if (str.isEmpty()) {
+            this.fechaDevolucion = null;
+            return;
+        }
+        if (str.contains("T")) {
+            str = str.substring(0, str.indexOf("T"));
+        }
+        this.fechaDevolucion = LocalDate.parse(str);
+    }
+
     public String getEstadoFinal() {
         if (estadoFinal != null && !estadoFinal.isBlank()) {
             return estadoFinal;

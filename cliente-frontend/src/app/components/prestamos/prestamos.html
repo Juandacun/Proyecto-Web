@@ -1,0 +1,391 @@
+<div class="content">
+
+  <!-- Cabecera de Página -->
+  <div class="page-head page-head--center">
+    <div class="intro intro--tight">
+      <h1>Gestión de Préstamos y Devoluciones</h1>
+      <p>Administra la entrega de equipos, validación de disponibilidad y control de puntualidad.</p>
+    </div>
+    <button class="btn btn--primary" type="button" (click)="abrirModalEntrega()">
+      + Registrar Entrega
+    </button>
+  </div>
+
+  <!-- Alertas de éxito y error -->
+  @if (mensajeExito) {
+    <div class="alerta alerta--exito">
+      <span class="alerta__icono">✓</span>
+      <span>{{ mensajeExito }}</span>
+    </div>
+  }
+  @if (mensajeError) {
+    <div class="alerta alerta--error">
+      <span class="alerta__icono">⚠</span>
+      <span>{{ mensajeError }}</span>
+    </div>
+  }
+
+  <!-- Pestañas de filtrado (Tabs) -->
+  <div class="tabs">
+    <button
+      type="button"
+      class="tab"
+      [class.is-active]="tabSeleccionada === 'activos'"
+      (click)="cambiarTab('activos')">
+      Préstamos Activos
+    </button>
+    <button
+      type="button"
+      class="tab"
+      [class.is-active]="tabSeleccionada === 'tardios'"
+      (click)="cambiarTab('tardios')">
+      Préstamos Tardíos / Vencidos
+    </button>
+    <button
+      type="button"
+      class="tab"
+      [class.is-active]="tabSeleccionada === 'todos'"
+      (click)="cambiarTab('todos')">
+      Historial Completo
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  @if (cargando) {
+    <div class="card empty">
+      Cargando préstamos desde el backend...
+    </div>
+  }
+
+  <!-- Tabla de Préstamos -->
+  @if (!cargando) {
+    <div class="card">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th style="width: 50px;">#ID</th>
+            <th class="col-equipo">Equipo</th>
+            <th>Usuario Responsable</th>
+            <th>Fecha Entrega</th>
+            <th>Fecha Límite</th>
+            <th>Estado</th>
+            <th>Puntualidad</th>
+            <th class="ta-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of prestamos; track p.idPrestamo) {
+            <tr>
+              <td><strong>#{{ p.idPrestamo }}</strong></td>
+              <td class="td-equipo">
+                <strong>{{ p.recurso?.nombre || 'Equipo #' + p.recursoId }}</strong>
+                <div class="muted">{{ p.recurso?.categoria?.nombre || p.recurso?.tipo || 'Equipo' }}</div>
+              </td>
+              <td>
+                <span>{{ p.usuarioResponsable || p.documento }}</span>
+              </td>
+              <td class="td-fecha">{{ p.fechaEntrega | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td class="td-fecha">{{ p.fechaDevolucionEstimada || p.fechaLimite | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td>
+                <span class="tag" [ngClass]="{
+                  'tag--ambar': p.estado === 'Activo' || p.estado === 'Prestado' || !p.fechaDevolucion,
+                  'tag--verde': p.estado === 'Devuelto' || p.fechaDevolucion
+                }">
+                  {{ p.fechaDevolucion ? 'Devuelto' : 'En Curso' }}
+                </span>
+              </td>
+              <td>
+                @if (p.puntualidad) {
+                  <span class="tag" [ngClass]="p.puntualidad === 'Puntual' ? 'tag--verde' : 'tag--rojo'">
+                    {{ p.puntualidad }}
+                  </span>
+                } @else if (!p.fechaDevolucion) {
+                  <span class="tag tag--gris">En plazo</span>
+                } @else {
+                  <span class="muted">-</span>
+                }
+              </td>
+              <td class="ta-right">
+                @if (!p.fechaDevolucion) {
+                  <button class="btn btn--ghost" type="button" (click)="abrirModalDevolucion(p)">
+                    Registrar Devolución
+                  </button>
+                } @else {
+                  <span class="muted">Devuelto el {{ p.fechaDevolucion | date:'dd/MM/yyyy' }}</span>
+                }
+              </td>
+            </tr>
+          }
+
+          @if (prestamos.length === 0) {
+            <tr>
+              <td colspan="8" class="empty">
+                No se encontraron préstamos en este filtro.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL: REGISTRAR ENTREGA (RN-02 y RN-03)       -->
+<!-- ============================================== -->
+@if (mostrarModalEntrega) {
+  <div class="modal-backdrop">
+    <div class="form-card">
+      <div class="form-card__head">
+        <h2 class="form-card__title">Registrar Entrega de Equipo</h2>
+        <p class="form-card__sub">Asegura la entrega validando que el equipo esté disponible.</p>
+      </div>
+
+      <!-- Banner de error del modal de entrega -->
+      @if (errorModalEntrega) {
+        <div class="alerta alerta--error">
+          <span class="alerta__icono">⚠️</span>
+          <span>{{ errorModalEntrega }}</span>
+        </div>
+      }
+
+      <!-- Selector de Equipo -->
+      <div class="field">
+        <label for="selectEquipo">Seleccionar Equipo a Prestar *</label>
+        <select
+          id="selectEquipo"
+          [(ngModel)]="entregaForm.recursoId"
+          (change)="onSeleccionarEquipo()">
+          <option [value]="0" disabled>-- Selecciona un equipo del catálogo --</option>
+          @for (eq of equiposDisponibles; track eq.idRecurso) {
+            <option [value]="eq.idRecurso">
+              {{ eq.nombre }} ({{ eq.tipo }}) - Estado actual: {{ eq.estado }}
+            </option>
+          }
+        </select>
+        <div class="field-help">Solo se listan recursos de tipo EQUIPO disponibles en campus.</div>
+      </div>
+
+      <!-- Validación de Reglas de Negocio en tiempo real -->
+      @if (equipoSeleccionado) {
+        @if (equipoSeleccionado.estado === 'Bloqueado') {
+          <div class="alerta alerta--error">
+            <span class="alerta__icono">⛔</span>
+            <span><strong>Regla RN-02:</strong> El equipo "{{ equipoSeleccionado.nombre }}" está BLOQUEADO por daño o mantenimiento y no puede ser prestado.</span>
+          </div>
+        }
+        @if (equipoSeleccionado.estado === 'Prestado' || equipoSeleccionado.estado === 'En préstamo') {
+          <div class="alerta alerta--error">
+            <span class="alerta__icono">⛔</span>
+            <span><strong>Regla RN-03:</strong> El equipo "{{ equipoSeleccionado.nombre }}" ya figura en PRESTADO. No puede entregarse de nuevo hasta su devolución.</span>
+          </div>
+        }
+        @if (equipoSeleccionado.estado === 'Disponible') {
+          <div class="alerta alerta--exito">
+            <span class="alerta__icono">✓</span>
+            <span>Equipo disponible para entrega. Pasará a estado "Prestado" al confirmar.</span>
+          </div>
+        }
+      }
+
+      <!-- 1. Selector de Usuario Responsable vinculado a BD -->
+      <div class="field">
+        <label for="usuarioResponsable">Usuario Responsable *</label>
+        <select
+          id="usuarioResponsable"
+          [(ngModel)]="usuarioSeleccionadoId"
+          (change)="onSeleccionarUsuario()">
+          <option [value]="''" disabled>-- Selecciona un usuario registrado --</option>
+          @for (u of usuarios; track u.idUsuario) {
+            <option [value]="u.idUsuario">
+              {{ u.nombre }} - {{ u.tipo }} ({{ u.codigo }})
+            </option>
+          }
+        </select>
+        <div class="field-help">Usuario registrado en la base de datos institucional que asume la custodia del equipo.</div>
+      </div>
+
+      <!-- Fecha y Hora de Entrega (Inicio del préstamo) -->
+      <div class="field-row">
+        <div class="field">
+          <label for="fechaEntregaDate">Fecha de Entrega *</label>
+          <input
+            id="fechaEntregaDate"
+            type="date"
+            [(ngModel)]="fechaEntregaDate"
+          />
+          <div class="field-help">Fecha en que se entrega el equipo</div>
+        </div>
+        <div class="field">
+          <label for="horaEntregaTime">Hora de Entrega *</label>
+          <input
+            id="horaEntregaTime"
+            type="time"
+            [(ngModel)]="horaEntregaTime"
+          />
+          <div class="field-help">Hora de inicio del préstamo</div>
+        </div>
+      </div>
+
+      <!-- Fecha y Hora Límite de Devolución -->
+      <div class="field-row">
+        <div class="field">
+          <label for="fechaLimiteDate">Fecha límite de devolución *</label>
+          <input
+            id="fechaLimiteDate"
+            type="date"
+            [(ngModel)]="fechaLimiteDate"
+            [min]="fechaEntregaDate || fechaMinima"
+          />
+          <div class="field-help">Plazo máximo pactado para devolver el equipo</div>
+        </div>
+        <div class="field">
+          <label for="horaLimiteTime">Hora límite de devolución *</label>
+          <select id="horaLimiteTime" [(ngModel)]="horaLimiteTime">
+            @for (hora of horasCampus; track hora) {
+              <option [value]="hora">{{ hora }} hrs</option>
+            }
+          </select>
+          <div class="field-help">Horario límite de devolución</div>
+        </div>
+      </div>
+
+      <!-- Advertencia de incoherencia cronológica en tiempo real -->
+      @if (esHorarioInvalido) {
+        <div class="alerta alerta--error" style="margin-top: -6px; margin-bottom: 4px;">
+          <span class="alerta__icono">⚠️</span>
+          <span>La hora límite de devolución debe ser posterior a la hora de entrega.</span>
+        </div>
+      }
+
+      <!-- 3. Clarificación de 'Estado Inicial' y 'Accesorios' -->
+      <div class="field-row">
+        <div class="field">
+          <label for="estadoInicial">Estado Inicial *</label>
+          <select id="estadoInicial" [(ngModel)]="entregaForm.estadoInicial">
+            <option value="Operativo">Operativo</option>
+            <option value="Excelente / Nuevo">Excelente / Nuevo</option>
+            <option value="Buen estado general">Buen estado general</option>
+            <option value="Desgaste leve de uso">Desgaste leve de uso</option>
+          </select>
+          <div class="field-help">Condición física del equipo al momento de la entrega</div>
+        </div>
+        <div class="field">
+          <label for="accesorios">Accesorios</label>
+          <input
+            id="accesorios"
+            type="text"
+            [(ngModel)]="entregaForm.accesorios"
+            placeholder="Cables, cargador, estuche"
+          />
+          <div class="field-help">Elementos y complementos incluidos en la entrega</div>
+        </div>
+      </div>
+
+      <!-- Observaciones -->
+      <div class="field">
+        <label for="observaciones">Observaciones</label>
+        <textarea
+          id="observaciones"
+          rows="2"
+          [(ngModel)]="entregaForm.observaciones"
+          placeholder="Condiciones específicas, notas o acuerdos especiales...">
+        </textarea>
+      </div>
+
+      <!-- Acciones -->
+      <div class="form-actions">
+        <button class="btn btn--ghost" type="button" (click)="cerrarModalEntrega()">Cancelar</button>
+        <button
+          class="btn btn--primary"
+          type="button"
+          [disabled]="guardandoEntrega || esEquipoInvalido() || !usuarioSeleccionadoId || !fechaEntregaDate || !fechaLimiteDate || esHorarioInvalido"
+          (click)="registrarEntrega()">
+          {{ guardandoEntrega ? 'Registrando...' : 'Confirmar Entrega' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ============================================== -->
+<!-- MODAL: REGISTRAR DEVOLUCIÓN                    -->
+<!-- ============================================== -->
+@if (prestamoParaDevolucion) {
+  <div class="modal-backdrop">
+    <div class="form-card">
+      <div class="form-card__head">
+        <h2 class="form-card__title">Registrar Devolución de Equipo</h2>
+        <p class="form-card__sub">
+          Equipo: <strong>{{ prestamoParaDevolucion.recurso?.nombre || 'Equipo #' + prestamoParaDevolucion.recursoId }}</strong>
+        </p>
+      </div>
+
+      <!-- Banner de error del modal de devolución -->
+      @if (errorModalDevolucion) {
+        <div class="alerta alerta--error">
+          <span class="alerta__icono">⚠️</span>
+          <span>{{ errorModalDevolucion }}</span>
+        </div>
+      }
+
+      <!-- Fecha y hora de devolución limpias -->
+      <div class="field-row">
+        <div class="field">
+          <label for="fechaDevolucion">Fecha real de devolución *</label>
+          <input
+            id="fechaDevolucion"
+            type="date"
+            [(ngModel)]="fechaDevolucionDate"
+          />
+        </div>
+        <div class="field">
+          <label for="horaDevolucion">Hora de devolución *</label>
+          <input
+            id="horaDevolucion"
+            type="time"
+            [(ngModel)]="horaDevolucionTime"
+          />
+        </div>
+      </div>
+      <div class="field-help" style="margin-top: -8px; margin-bottom: 8px;">
+        Se comparará automáticamente con la fecha límite para determinar la puntualidad (Puntual / Tardía).
+      </div>
+
+      <div class="field">
+        <label for="estadoFinal">Estado Final del Equipo</label>
+        <select id="estadoFinal" [(ngModel)]="devolucionForm.estadoFinal">
+          <option value="Operativo">Operativo</option>
+          <option value="Excelente / Sin novedad">Excelente / Sin novedad</option>
+          <option value="Buen estado general">Buen estado general</option>
+          <option value="Con avería o daño leve">Con avería o daño leve</option>
+        </select>
+        <div class="field-help">Estado físico verificado al recibir el equipo.</div>
+      </div>
+
+      <div class="field">
+        <label for="obsDevolucion">Observaciones de Entrega</label>
+        <textarea
+          id="obsDevolucion"
+          rows="2"
+          [(ngModel)]="devolucionForm.observaciones"
+          placeholder="Condiciones en las que se recibe el equipo...">
+        </textarea>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn--ghost" type="button" (click)="cerrarModalDevolucion()">Cancelar</button>
+        <button
+          class="btn btn--primary"
+          type="button"
+          [disabled]="guardandoDevolucion"
+          (click)="registrarDevolucion()">
+          {{ guardandoDevolucion ? 'Guardando...' : 'Liberar a Disponible' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+}

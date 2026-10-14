@@ -84,6 +84,27 @@ public class PrestamoEntregaDTO {
         this.fechaEntrega = fechaEntrega;
     }
 
+    @com.fasterxml.jackson.annotation.JsonSetter("fechaEntrega")
+    public void setFechaEntregaFromString(Object value) {
+        if (value == null) {
+            this.fechaEntrega = null;
+            return;
+        }
+        if (value instanceof LocalDate ld) {
+            this.fechaEntrega = ld;
+            return;
+        }
+        String str = value.toString().trim();
+        if (str.isEmpty()) {
+            this.fechaEntrega = null;
+            return;
+        }
+        if (str.contains("T")) {
+            str = str.substring(0, str.indexOf("T"));
+        }
+        this.fechaEntrega = LocalDate.parse(str);
+    }
+
     public LocalDate getFechaLimite() {
         if (fechaLimite != null) {
             return fechaLimite;
@@ -93,6 +114,27 @@ public class PrestamoEntregaDTO {
 
     public void setFechaLimite(LocalDate fechaLimite) {
         this.fechaLimite = fechaLimite;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonSetter("fechaLimite")
+    public void setFechaLimiteFromString(Object value) {
+        if (value == null) {
+            this.fechaLimite = null;
+            return;
+        }
+        if (value instanceof LocalDate ld) {
+            this.fechaLimite = ld;
+            return;
+        }
+        String str = value.toString().trim();
+        if (str.isEmpty()) {
+            this.fechaLimite = null;
+            return;
+        }
+        if (str.contains("T")) {
+            str = str.substring(0, str.indexOf("T"));
+        }
+        this.fechaLimite = LocalDate.parse(str);
     }
 
     public LocalDate getFechaDevolucionEstimada() {

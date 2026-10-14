@@ -1,12 +1,15 @@
 import { TestBed } from '@angular/core/testing';
-import { Recurso } from './recurso';
+import { provideHttpClient } from '@angular/common/http';
+import { RecursoService } from './recurso';
 
-describe('Recurso', () => {
-  let service: Recurso;
+describe('RecursoService', () => {
+  let service: RecursoService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(Recurso);
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient()]
+    });
+    service = TestBed.inject(RecursoService);
   });
 
   it('should be created', () => {
