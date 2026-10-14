@@ -1,0 +1,104 @@
+<div class="layout">
+    <!-- Sidebar original de la primera entrega -->
+    <aside class="sidebar">
+        <div class="brand">CampusRecursos</div>
+        <div class="brand-sub">Gestión de reservas y recursos</div>
+        <div class="spacer"></div>
+        <a class="nav-item is-active" href="#">Catálogo de recursos</a>
+        <a class="nav-item" href="#">Reservas</a>
+        <a class="nav-item" href="#">Préstamos y devoluciones</a>
+        <a class="nav-item" href="#">Incidentes</a>
+        <a class="nav-item" href="#">Tablero e Indicadores</a>
+        <a class="nav-item" href="#">Administración</a>
+    </aside>
+
+    <main class="main">
+        <!-- Topbar superior original -->
+        <header class="topbar">
+            <div class="screen-title">Catálogo de recursos</div>
+            <div class="right-group">
+                <div class="role-pill">
+                    <span class="role-text">Invitado</span>
+                    <span class="caret">▼</span>
+                </div>
+                <div class="avatar">I</div>
+            </div>
+        </header>
+
+        <section class="content">
+            <div class="page-head page-head--center">
+                <div class="intro intro--tight">
+                    <h1>Catálogo de recursos</h1>
+                    <p>Consulta espacios y equipos institucionales, su ubicación, estado y disponibilidad.</p>
+                </div>
+                <a class="btn btn--primary" href="#">Nuevo recurso</a>
+            </div>
+
+            <!-- Filtros -->
+            <div class="filtros">
+                <div class="field field--buscar">
+                    <label for="q">Buscar</label>
+                    <input id="q" type="search" [(ngModel)]="filtroTexto"
+                        placeholder="Nombre, categoría, ubicación, tipo...">
+                </div>
+                <div class="field">
+                    <label for="clase">Clase</label>
+                    <select id="clase" [(ngModel)]="claseSeleccionada">
+                        <option value="">Todos</option>
+                        <option value="Equipo">Equipo</option>
+                        <option value="Espacio">Espacio</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="estado">Estado</label>
+                    <select id="estado" [(ngModel)]="estadoSeleccionado">
+                        <option value="">Todos</option>
+                        <option value="Disponible">Disponible</option>
+                        <option value="Reservado">Reservado</option>
+                        <option value="En préstamo">En préstamo</option>
+                        <option value="Bloqueado">Bloqueado</option>
+                    </select>
+                </div>
+                <div class="field field--acciones" style="display: flex; gap: 8px; align-items: flex-end;">
+                    <button class="btn btn--primary" type="button" (click)="aplicarFiltros()">Filtrar</button>
+                    <button class="btn btn--ghost" type="button" (click)="limpiarFiltros()">Limpiar</button>
+                </div>
+            </div>
+
+
+            <!-- Grid de recursos -->
+            <div class="grid-recursos">
+                <article class="recurso" *ngFor="let r of recursosFiltrados">
+                    <div class="recurso__thumb" [style.background-image]="r.imagen ? 'url(' + r.imagen + ')' : null"
+                        style="background-size: cover; background-position: center;">
+                        <span *ngIf="!r.imagen" class="recurso__thumb-ph">foto del recurso</span>
+                    </div>
+                    <div class="recurso__body">
+                        <div class="recurso__top">
+                            <span class="recurso__nombre">{{ r.nombre }}</span>
+                            <span class="tag" [ngClass]="{
+                'tag--verde': r.estado === 'Disponible',
+                'tag--azul': r.estado === 'Reservado',
+                'tag--ambar': r.estado === 'En préstamo',
+                'tag--rojo': r.estado === 'Bloqueado'
+              }">{{ r.estado }}</span>
+                        </div>
+                        <span class="recurso__meta">{{ r.categoria?.nombre || r.tipo }} · {{ r.ubicacion?.nombre
+                            }}</span>
+                        <div class="recurso__acciones"
+                            style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
+                            <button *ngIf="r.estado === 'Disponible'" class="btn btn--primary btn--sm"
+                                (click)="verDetalle(r)">Prestar</button>
+                            <span *ngIf="r.estado !== 'Disponible'" class="muted">No disponible</span>
+                            <a class="recurso__link" (click)="verDetalle(r)" style="cursor: pointer;">Ver
+                                disponibilidad</a>
+                        </div>
+                    </div>
+                </article>
+
+                <p *ngIf="recursosFiltrados.length === 0" class="empty">No hay recursos que coincidan con los filtros.
+                </p>
+            </div>
+        </section>
+    </main>
+</div>

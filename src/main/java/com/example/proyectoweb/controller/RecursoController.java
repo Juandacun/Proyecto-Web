@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping({"/api/recursos", "/recursos"})
+@RequestMapping({"/api/recursos"})
 @CrossOrigin(origins = "http://localhost:4200")
 @Tag(name = "Recursos", description = "API REST para administración, consulta y gestión de estados de recursos (equipos y espacios)")
 public class RecursoController {
