@@ -110,6 +110,14 @@ public class Reserva {
         this.solicitante = solicitante;
     }
 
+    public String getEstadoColor() {
+        return colorDeEstado(this.estado);
+    }
+
+    public boolean esActiva() {
+        return "Confirmada".equalsIgnoreCase(this.estado);
+    }
+
     public static String colorDeEstado(String estado) {
         if (estado == null) {
             return "gris";
@@ -120,6 +128,9 @@ public class Reserva {
         }
         if (e.contains("cancelad")) {
             return "rojo";
+        }
+        if (e.contains("finalizad")) {
+            return "azul";
         }
         return "gris";
     }

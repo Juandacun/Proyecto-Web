@@ -18,6 +18,7 @@ public class Categoria {
     private String descripcion;
     
     // Relación con recursos
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @OneToMany(mappedBy = "categoria")
     private List<Recurso> recursos;
 

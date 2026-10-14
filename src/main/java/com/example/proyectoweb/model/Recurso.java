@@ -147,12 +147,31 @@ public class Recurso {
         return colorDeEstado(estado);
     }
 
+    public boolean estaDisponible() {
+        return "Disponible".equalsIgnoreCase(this.estado);
+    }
+
+    public boolean estaBloqueado() {
+        if (this.estado == null) {
+            return false;
+        }
+        String e = normalizar(this.estado);
+        return e.contains("bloquea") || e.contains("mantenimiento") || e.contains("dan") || e.contains("reparacion");
+    }
+
+    public boolean estaPrestado() {
+        if (this.estado == null) {
+            return false;
+        }
+        String e = normalizar(this.estado);
+        return e.contains("prestam") || e.contains("prestado");
+    }
+
     public static String colorDeEstado(String estado) {
         if (estado == null) {
             return "gris";
         }
-        String e = java.text.Normalizer.normalize(estado, java.text.Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "").toLowerCase();
+        String e = normalizar(estado);
         if (e.contains("disponible")) {
             return "verde";
         }
@@ -162,9 +181,15 @@ public class Recurso {
         if (e.contains("prestam") || e.contains("prestado")) {
             return "ambar";
         }
-        if (e.contains("mantenimiento") || e.contains("reparacion") || e.contains("dan")) {
+        if (e.contains("mantenimiento") || e.contains("reparacion") || e.contains("dan") || e.contains("bloquea")) {
             return "rojo";
         }
         return "gris";
+    }
+
+    private static String normalizar(String texto) {
+        if (texto == null) return "";
+        return java.text.Normalizer.normalize(texto, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "").toLowerCase();
     }
 }
