@@ -20,7 +20,10 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping({"/api/reservas", "/reservas"})
@@ -35,7 +38,7 @@ public class ReservaController {
     private RecursoService recursoService;
 
     // GET /api/reservas - Listar reservas con filtros opcionales
-    @Operation(summary = "Listar reservas", description = "Obtiene la lista de reservas, con filtros opcionales por ID de recurso, fecha o estado.")
+    @Operation(summary = "Listar reservas", description = "Obtiene la lista de reservas, con filtros opcionales y combinables por ID de recurso, fecha y estado.")
     @ApiResponse(responseCode = "200", description = "Lista de reservas obtenida exitosamente")
     @GetMapping
     public ResponseEntity<List<Reserva>> listar(
@@ -46,16 +49,7 @@ public class ReservaController {
             @Parameter(description = "Filtrar por estado textual: Confirmada, Cancelada, Finalizada")
             @RequestParam(required = false) String estado) {
 
-        if (recursoId != null) {
-            return ResponseEntity.ok(reservaService.listarPorRecurso(recursoId));
-        }
-        if (fecha != null) {
-            return ResponseEntity.ok(reservaService.listarPorFecha(fecha));
-        }
-        if (estado != null && !estado.isBlank()) {
-            return ResponseEntity.ok(reservaService.listarPorEstado(estado));
-        }
-        return ResponseEntity.ok(reservaService.listar());
+        return ResponseEntity.ok(reservaService.filtrar(recursoId, fecha, estado));
     }
 
     // GET /api/reservas/{id} - Obtener reserva por ID
@@ -118,19 +112,37 @@ public class ReservaController {
                     "mensaje", "El recurso figura en préstamo y no puede ser reservado (RN-02)."
             ));
         }
-        if (horaInicio.compareTo(horaFin) >= 0) {
+        String inicio;
+        String fin;
+        try {
+            inicio = ReservaService.normalizarHora(horaInicio);
+            fin = ReservaService.normalizarHora(horaFin);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("disponible", false, "error", e.getMessage()));
+        }
+        if (inicio.compareTo(fin) >= 0) {
             return ResponseEntity.badRequest().body(Map.of(
                     "disponible", false,
                     "error", "La hora de inicio debe ser anterior a la hora de fin."
             ));
         }
+        if (!LocalDateTime.of(fecha, LocalTime.parse(inicio)).isAfter(LocalDateTime.now())) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "disponible", false,
+                    "error", "No se puede reservar en una fecha u hora que ya pasó."
+            ));
+        }
 
-        boolean seSuperpone = reservaService.seSuperpone(reservaIdExcluir, recursoId, fecha, horaInicio, horaFin);
-        if (seSuperpone) {
+        Optional<Reserva> conflicto = reservaService.buscarConflicto(reservaIdExcluir, recursoId, fecha, inicio, fin);
+        if (conflicto.isPresent()) {
+            Reserva otra = conflicto.get();
             return ResponseEntity.ok(Map.of(
                     "disponible", false,
                     "motivo", "RN-01",
-                    "mensaje", "Existe solapamiento de horarios con otra reserva activa (RN-01)."
+                    "mensaje", "El recurso no está disponible: ya tiene una reserva de " + otra.getHoraInicio()
+                            + " a " + otra.getHoraFin() + " ese día (RN-01).",
+                    "conflictoInicio", otra.getHoraInicio(),
+                    "conflictoFin", otra.getHoraFin()
             ));
         }
 
@@ -160,7 +172,7 @@ public class ReservaController {
             // Conflicto de regla de negocio (RN-01 solapamiento o RN-02 recurso bloqueado)
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
                     "error", e.getMessage(),
-                    "codigo", e.getMessage().contains("RN-01") ? "RN-01" : "RN-02"
+                    "codigo", codigoDe(e)
             ));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -173,7 +185,7 @@ public class ReservaController {
             @ApiResponse(responseCode = "200", description = "Reserva actualizada exitosamente"),
             @ApiResponse(responseCode = "404", description = "Reserva no encontrada"),
             @ApiResponse(responseCode = "400", description = "Parámetros inválidos"),
-            @ApiResponse(responseCode = "409", description = "Conflicto por horario solapado (RN-01) o recurso bloqueado (RN-02)")
+            @ApiResponse(responseCode = "409", description = "Conflicto por horario solapado (RN-01), recurso bloqueado (RN-02) o la reserva ya inició")
     })
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody ReservaDTO dto) {
@@ -187,7 +199,7 @@ public class ReservaController {
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
                     "error", e.getMessage(),
-                    "codigo", e.getMessage().contains("RN-01") ? "RN-01" : "RN-02"
+                    "codigo", codigoDe(e)
             ));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -195,14 +207,20 @@ public class ReservaController {
     }
 
     // PATCH o POST /api/reservas/{id}/cancelar - Cancelar reserva
-    @Operation(summary = "Cancelar reserva", description = "Cancela una reserva y libera el recurso a Disponible si no tiene otras reservas activas.")
+    @Operation(summary = "Cancelar reserva", description = "Cancela una reserva Confirmada que aún no ha iniciado (409 si ya inició o no está Confirmada) y libera el recurso a Disponible si no tiene otras reservas activas.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Reserva cancelada exitosamente"),
+            @ApiResponse(responseCode = "409", description = "La reserva ya inició o no está Confirmada"),
             @ApiResponse(responseCode = "404", description = "Reserva no encontrada")
     })
     @RequestMapping(value = "/{id}/cancelar", method = {RequestMethod.PATCH, RequestMethod.POST})
     public ResponseEntity<?> cancelar(@PathVariable Long id) {
-        Reserva cancelada = reservaService.cancelar(id);
+        Reserva cancelada;
+        try {
+            cancelada = reservaService.cancelar(id);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage(), "codigo", codigoDe(e)));
+        }
         if (cancelada == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "La reserva con ID " + id + " no existe."));
@@ -214,11 +232,17 @@ public class ReservaController {
     @Operation(summary = "Finalizar reserva", description = "Marca la reserva como finalizada y libera el recurso si corresponde.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Reserva finalizada exitosamente"),
+            @ApiResponse(responseCode = "409", description = "La reserva no está Confirmada"),
             @ApiResponse(responseCode = "404", description = "Reserva no encontrada")
     })
     @RequestMapping(value = "/{id}/finalizar", method = {RequestMethod.PATCH, RequestMethod.POST})
     public ResponseEntity<?> finalizar(@PathVariable Long id) {
-        Reserva finalizada = reservaService.finalizar(id);
+        Reserva finalizada;
+        try {
+            finalizada = reservaService.finalizar(id);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage(), "codigo", codigoDe(e)));
+        }
         if (finalizada == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "La reserva con ID " + id + " no existe."));
@@ -240,5 +264,12 @@ public class ReservaController {
                     .body(Map.of("error", "La reserva con ID " + id + " no existe."));
         }
         return ResponseEntity.noContent().build();
+    }
+
+    private static String codigoDe(IllegalStateException e) {
+        String m = e.getMessage() == null ? "" : e.getMessage();
+        if (m.contains("RN-01")) return "RN-01";
+        if (m.contains("RN-02")) return "RN-02";
+        return "ESTADO_RESERVA";
     }
 }

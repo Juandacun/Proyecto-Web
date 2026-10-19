@@ -118,6 +118,14 @@ public class Reserva {
         return "Confirmada".equalsIgnoreCase(this.estado);
     }
 
+    public boolean getEditable() {
+        return com.example.proyectoweb.service.ReservaService.esEditable(this);
+    }
+
+    public boolean getIniciada() {
+        return com.example.proyectoweb.service.ReservaService.haIniciado(this);
+    }
+
     public static String colorDeEstado(String estado) {
         if (estado == null) {
             return "gris";

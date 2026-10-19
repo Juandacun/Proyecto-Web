@@ -1,0 +1,256 @@
+<div class="content">
+
+  <div class="page-head page-head--center">
+    <div class="intro intro--tight">
+      <h1>Reservas de espacios</h1>
+      <p>Reserva salas, aulas y laboratorios. El sistema valida que no haya cruces de horario ni espacios bloqueados.</p>
+    </div>
+    <button class="btn btn--primary" type="button" (click)="abrirCrear()">+ Nueva reserva</button>
+  </div>
+
+  @if (mensajeExito()) {
+    <div class="alerta alerta--exito" role="status">
+      <span class="alerta__icono">✓</span>
+      <span>{{ mensajeExito() }}</span>
+      <button class="alerta__cerrar" type="button" aria-label="Cerrar" (click)="mensajeExito.set(null)">×</button>
+    </div>
+  }
+  @if (mensajeError()) {
+    <div class="alerta alerta--error" role="alert">
+      <span class="alerta__icono">⚠</span>
+      <span>{{ mensajeError() }}</span>
+      <button class="alerta__cerrar" type="button" aria-label="Cerrar" (click)="mensajeError.set(null)">×</button>
+    </div>
+  }
+
+  <div class="tabs">
+    <button type="button" class="tab" [class.is-active]="tab() === 'proximas'" (click)="cambiarTab('proximas')">
+      Próximas
+      <span class="tab__badge">{{ totalProximas() }}</span>
+    </button>
+    <button type="button" class="tab" [class.is-active]="tab() === 'historial'" (click)="cambiarTab('historial')">
+      Historial
+    </button>
+    <button type="button" class="tab" [class.is-active]="tab() === 'todas'" (click)="cambiarTab('todas')">
+      Todas
+    </button>
+  </div>
+
+  <div class="filtros">
+    <div class="field">
+      <label for="f-texto">Buscar</label>
+      <input id="f-texto" type="search" placeholder="Espacio, solicitante o motivo"
+             [ngModel]="filtroTexto()" (ngModelChange)="filtroTexto.set($event)">
+    </div>
+    <div class="field">
+      <label for="f-recurso">Espacio</label>
+      <select id="f-recurso" [ngModel]="filtroRecursoId()" (ngModelChange)="filtroRecursoId.set($event)">
+        <option value="">Todos los espacios</option>
+        @for (e of espacios(); track e.idRecurso) {
+          <option [ngValue]="e.idRecurso">{{ e.nombre }}</option>
+        }
+      </select>
+    </div>
+    <div class="field field--fecha">
+      <label for="f-fecha">Fecha</label>
+      <input id="f-fecha" type="date" [ngModel]="filtroFecha()" (ngModelChange)="filtroFecha.set($event)">
+    </div>
+    <button class="btn btn--ghost filtros__limpiar" type="button" (click)="limpiarFiltros()">Limpiar</button>
+  </div>
+
+  @if (cargando()) {
+    <div class="card empty">Cargando reservas…</div>
+  } @else {
+    <div class="card">
+      <div class="tabla-scroll">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Espacio</th>
+              <th>Fecha</th>
+              <th>Horario</th>
+              <th>Solicitante</th>
+              <th>Motivo</th>
+              <th>Estado</th>
+              <th class="ta-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of reservasVisibles(); track r.idReserva) {
+              <tr>
+                <td data-label="#"><strong>#{{ r.idReserva }}</strong></td>
+                <td data-label="Espacio" class="td-recurso">
+                  {{ r.recurso.nombre }}
+                  @if (r.recurso.ubicacion?.nombre) {
+                    <div class="muted">{{ r.recurso.ubicacion?.nombre }}</div>
+                  }
+                </td>
+                <td data-label="Fecha" class="td-fecha">{{ formatearFecha(r.fecha) }}</td>
+                <td data-label="Horario" class="td-fecha">{{ r.horaInicio }} – {{ r.horaFin }}</td>
+                <td data-label="Solicitante">{{ r.solicitante }}</td>
+                <td data-label="Motivo">{{ r.motivo || '—' }}</td>
+                <td data-label="Estado"><span class="tag" [ngClass]="claseEstado(r)">{{ textoEstado(r) }}</span></td>
+                <td data-label="Acciones" class="ta-right">
+                  <div class="acciones">
+                    @if (esEditable(r)) {
+                      <button class="btn btn--sm btn--ghost" type="button" (click)="abrirEditar(r)">Modificar</button>
+                      <button class="btn btn--sm btn--danger" type="button" (click)="pedirCancelacion(r)">Cancelar</button>
+                    } @else if (esFinalizable(r)) {
+                      <button class="btn btn--sm btn--ghost" type="button" (click)="finalizar(r)">Finalizar</button>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="8" class="empty">
+                  @if (tab() === 'proximas') {
+                    No hay reservas próximas con estos filtros.
+                  } @else {
+                    No hay reservas con estos filtros.
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>
+
+@if (mostrarFormulario()) {
+  <div class="modal-backdrop" (click)="cerrarFormulario()">
+    <form class="form-card" (click)="$event.stopPropagation()" (ngSubmit)="guardar()" #f="ngForm">
+      <div class="form-card__head">
+        <h2 class="form-card__title">
+          {{ modo() === 'crear' ? 'Nueva reserva' : 'Modificar reserva #' + reservaEditando()?.idReserva }}
+        </h2>
+        <p class="form-card__sub">
+          Solo se reservan espacios. Los equipos se solicitan en Préstamos.
+        </p>
+      </div>
+
+      <div class="field">
+        <label for="r-recurso">Espacio *</label>
+        <select id="r-recurso" name="recursoId" required [(ngModel)]="form.recursoId" (ngModelChange)="onCambioFormulario()">
+          <option value="" disabled>Selecciona un espacio</option>
+          @for (e of espacios(); track e.idRecurso) {
+            <option [ngValue]="e.idRecurso">{{ e.nombre }} · {{ e.estado }}</option>
+          }
+        </select>
+        @if (espacioSeleccionado; as e) {
+          <span class="field-help">
+            {{ e.tipo }}@if (e.ubicacion?.nombre) { · {{ e.ubicacion.nombre }} }@if (e.caracteristicas) { · {{ e.caracteristicas }} }
+          </span>
+        }
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="r-fecha">Fecha *</label>
+          <input id="r-fecha" name="fecha" type="date" required [min]="hoy"
+                 [(ngModel)]="form.fecha" (ngModelChange)="onCambioFormulario()">
+        </div>
+        <div class="field">
+          <label for="r-inicio">Hora inicio *</label>
+          <select id="r-inicio" name="horaInicio" required [(ngModel)]="form.horaInicio" (ngModelChange)="onCambioFormulario()">
+            <option value="" disabled>--:--</option>
+            @for (h of horas; track h) { <option [value]="h">{{ h }}</option> }
+          </select>
+        </div>
+        <div class="field">
+          <label for="r-fin">Hora fin *</label>
+          <select id="r-fin" name="horaFin" required [(ngModel)]="form.horaFin" (ngModelChange)="onCambioFormulario()">
+            <option value="" disabled>--:--</option>
+            @for (h of horas; track h) {
+              <option [value]="h" [disabled]="!!form.horaInicio && h <= form.horaInicio">{{ h }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      @if (form.recursoId && form.fecha) {
+        <div class="ocupacion">
+          <div class="ocupacion__titulo">Ocupación de este espacio el {{ formatearFecha(form.fecha) }}</div>
+          @if (ocupacionDia().length === 0) {
+            <div class="muted">Sin reservas confirmadas ese día.</div>
+          } @else {
+            <div class="ocupacion__lista">
+              @for (o of ocupacionDia(); track o.idReserva) {
+                <span class="chip">{{ o.horaInicio }}–{{ o.horaFin }}</span>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      @if (verificando()) {
+        <div class="disp disp--neutral">Verificando disponibilidad…</div>
+      } @else if (disponibilidad(); as d) {
+        @if (d.disponible) {
+          <div class="disp disp--ok">✓ {{ d.mensaje || 'Disponible' }}</div>
+        } @else {
+          <div class="disp disp--no">✕ {{ d.mensaje || d.error }}</div>
+        }
+      }
+
+      <div class="field-row">
+        <div class="field">
+          <label for="r-solicitante">Solicitante</label>
+          <input id="r-solicitante" name="solicitante" type="text" list="lista-usuarios"
+                 placeholder="Nombre de quien reserva" maxlength="120" [(ngModel)]="form.solicitante">
+          <datalist id="lista-usuarios">
+            @for (u of usuarios(); track u.idUsuario) {
+              <option [value]="u.nombre">{{ u.tipo }} · {{ u.codigo }}</option>
+            }
+          </datalist>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="r-motivo">Motivo</label>
+        <textarea id="r-motivo" name="motivo" rows="2" maxlength="255"
+                  placeholder="Ej.: clase, sustentación, reunión de grupo" [(ngModel)]="form.motivo"></textarea>
+      </div>
+
+      @if (errorFormulario()) {
+        <div class="alerta alerta--error" role="alert">
+          <span class="alerta__icono">⚠</span>
+          <span>{{ errorFormulario() }}</span>
+        </div>
+      }
+
+      <div class="form-actions">
+        <button class="btn btn--ghost" type="button" (click)="cerrarFormulario()">Volver</button>
+        <button class="btn btn--primary" type="submit"
+                [disabled]="guardando() || !formularioCompleto || disponibilidad()?.disponible === false">
+          {{ guardando() ? 'Guardando…' : (modo() === 'crear' ? 'Confirmar reserva' : 'Guardar cambios') }}
+        </button>
+      </div>
+    </form>
+  </div>
+}
+
+@if (reservaACancelar(); as r) {
+  <div class="modal-backdrop" (click)="cerrarCancelacion()">
+    <div class="form-card form-card--sm" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <div class="form-card__head">
+        <h2 class="form-card__title">¿Cancelar la reserva #{{ r.idReserva }}?</h2>
+        <p class="form-card__sub">
+          {{ r.recurso.nombre }} · {{ formatearFecha(r.fecha) }} · {{ r.horaInicio }}–{{ r.horaFin }}
+        </p>
+      </div>
+      <p class="texto">El horario quedará libre para otras personas. Esta acción no se puede deshacer.</p>
+      <div class="form-actions">
+        <button class="btn btn--ghost" type="button" (click)="cerrarCancelacion()">No, mantener</button>
+        <button class="btn btn--danger" type="button" [disabled]="cancelando()" (click)="confirmarCancelacion()">
+          {{ cancelando() ? 'Cancelando…' : 'Sí, cancelar reserva' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
