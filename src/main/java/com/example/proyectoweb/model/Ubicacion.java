@@ -23,6 +23,7 @@ public class Ubicacion {
 
 
     // Relación con recursos
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @OneToMany(mappedBy = "ubicacion")
     private List<Recurso> recursos;
 

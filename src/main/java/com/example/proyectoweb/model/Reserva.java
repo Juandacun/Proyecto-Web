@@ -110,6 +110,22 @@ public class Reserva {
         this.solicitante = solicitante;
     }
 
+    public String getEstadoColor() {
+        return colorDeEstado(this.estado);
+    }
+
+    public boolean esActiva() {
+        return "Confirmada".equalsIgnoreCase(this.estado);
+    }
+
+    public boolean getEditable() {
+        return com.example.proyectoweb.service.ReservaService.esEditable(this);
+    }
+
+    public boolean getIniciada() {
+        return com.example.proyectoweb.service.ReservaService.haIniciado(this);
+    }
+
     public static String colorDeEstado(String estado) {
         if (estado == null) {
             return "gris";
@@ -120,6 +136,9 @@ public class Reserva {
         }
         if (e.contains("cancelad")) {
             return "rojo";
+        }
+        if (e.contains("finalizad")) {
+            return "azul";
         }
         return "gris";
     }

@@ -1,0 +1,324 @@
+<div class="content">
+
+  <!-- Cabecera -->
+  <div class="page-head page-head--center">
+    <div class="intro intro--tight">
+      <h1>Incidentes y Mantenimiento de Recursos</h1>
+      <p>Reporte de averías, bloqueo por fallas críticas (RN-04) y liberación de recursos tras mantenimiento (RN-05).</p>
+    </div>
+    <button class="btn btn--primary" type="button" (click)="abrirModalNuevaOrden()">
+      + Nueva Orden de Mantenimiento
+    </button>
+  </div>
+
+  <!-- Alertas -->
+  @if (mensajeExito) {
+    <div class="alerta alerta--exito">
+      <span class="alerta__icono">✓</span>
+      <span>{{ mensajeExito }}</span>
+    </div>
+  }
+  @if (mensajeError) {
+    <div class="alerta alerta--error">
+      <span class="alerta__icono">⚠</span>
+      <span>{{ mensajeError }}</span>
+    </div>
+  }
+
+  <!-- Sección de Reporte de Daños y Novedades (RN-04) -->
+  <div class="incidentes">
+
+    <!-- Formulario de Reporte -->
+    <div class="form-card form-incidente">
+      <div class="form-card__head">
+        <h2 class="form-card__title">Reportar Incidente o Falla Técnica</h2>
+        <p class="form-card__sub">Registra daños, anomalías o faltantes detectados en espacios o equipos.</p>
+      </div>
+
+      <!-- Selección de Recurso -->
+      <div class="field">
+        <label for="recursoIncidente">Recurso Afectado *</label>
+        <select
+          id="recursoIncidente"
+          [(ngModel)]="incidenteForm.recursoId"
+          (change)="onSeleccionarRecursoIncidente()">
+          <option [value]="0" disabled>-- Selecciona el recurso que presenta la falla --</option>
+          @for (r of recursos; track r.idRecurso) {
+            <option [value]="r.idRecurso">
+              {{ r.nombre }} ({{ r.clase }}) - Estado actual: {{ r.estado }}
+            </option>
+          }
+        </select>
+      </div>
+
+      <div class="field-row">
+        <!-- Tipo de Novedad -->
+        <div class="field">
+          <label for="tipoNovedad">Tipo de Novedad *</label>
+          <select id="tipoNovedad" [(ngModel)]="incidenteForm.tipoNovedad">
+            <option value="Daño físico">Daño físico</option>
+            <option value="Falla de funcionamiento">Falla de funcionamiento</option>
+            <option value="Accesorio faltante">Accesorio faltante</option>
+            <option value="Condición inadecuada del espacio">Condición inadecuada del espacio</option>
+          </select>
+        </div>
+
+        <!-- Nivel de Severidad -->
+        <div class="field">
+          <label for="severidad">Nivel de Severidad *</label>
+          <select id="severidad" [(ngModel)]="incidenteForm.severidad">
+            <option value="Leve">Leve (Permite uso)</option>
+            <option value="Media">Media (Atención pronta)</option>
+            <option value="Crítica">Crítica (RN-04: Bloquea recurso)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Banner Informativo RN-04 -->
+      @if (incidenteForm.severidad === 'Crítica') {
+        <div class="alerta alerta--error">
+          <span class="alerta__icono">🚨</span>
+          <span><strong>Regla RN-04:</strong> Al reportar severidad <strong>"Crítica"</strong>, el recurso pasará automáticamente a estado <strong>"Bloqueado"</strong> y no podrá ser reservado ni prestado.</span>
+        </div>
+      }
+
+      <!-- Descripción -->
+      <div class="field">
+        <label for="descripcionIncidente">Descripción detallada de la anomalía *</label>
+        <textarea
+          id="descripcionIncidente"
+          rows="3"
+          [(ngModel)]="incidenteForm.descripcion"
+          placeholder="Describe claramente los signos de falla, daños o faltantes observados...">
+        </textarea>
+      </div>
+
+      <div class="form-actions">
+        <button
+          class="btn btn--danger"
+          type="button"
+          [disabled]="guardandoIncidente"
+          (click)="reportarIncidente()">
+          {{ guardandoIncidente ? 'Enviando...' : 'Registrar Reporte' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Resumen de Reglas de Negocio -->
+    <div class="card card--pad" style="flex: 1 1 340px;">
+      <h3 class="card__title">Reglas de Negocio Activas</h3>
+      <p class="card__note">El módulo de incidentes y mantenimiento opera bajo las siguientes restricciones automáticas:</p>
+
+      <div class="alerta alerta--error" style="margin-top: 8px;">
+        <span class="alerta__icono">🛡</span>
+        <div>
+          <strong>RN-04: Bloqueo Automático</strong>
+          <div class="muted" style="margin-top: 2px;">Cualquier incidente con severidad 'Crítica' cambia inmediatamente el estado del recurso a 'Bloqueado'.</div>
+        </div>
+      </div>
+
+      <div class="alerta alerta--exito" style="margin-top: 8px;">
+        <span class="alerta__icono">🔧</span>
+        <div>
+          <strong>RN-05: Liberación por Mantenimiento</strong>
+          <div class="muted" style="margin-top: 2px;">Al finalizar una intervención técnica, el sistema restaura el recurso automáticamente a estado 'Disponible'.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Tabla de Órdenes de Mantenimiento (RN-05) -->
+  <div class="intro intro--tight" style="margin-top: 16px;">
+    <h2>Órdenes de Mantenimiento</h2>
+    <p>Intervenciones técnicas en curso. Al finalizar se aplica la regla RN-05 liberando el recurso.</p>
+  </div>
+
+  <div class="card">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th style="width: 50px;">#ID</th>
+          <th class="col-equipo">Recurso Intervenido</th>
+          <th>Diagnóstico / Trabajo</th>
+          <th>Fecha Apertura</th>
+          <th>Estado</th>
+          <th>Responsable</th>
+          <th class="ta-right">Acción RN-05</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (m of mantenimientos; track m.idMantenimiento) {
+          <tr>
+            <td><strong>#{{ m.idMantenimiento }}</strong></td>
+            <td class="td-equipo">
+              <strong>{{ m.recurso?.nombre || 'Recurso #' + m.recursoId }}</strong>
+              <div class="muted">
+                {{ m.recurso?.clase }} &bull; Estado recurso: {{ m.recurso?.estado }}
+              </div>
+            </td>
+            <td>
+              <span class="td-diagnostico">{{ m.diagnostico || 'Revisión técnica' }}</span>
+              @if (m.observaciones) {
+                <div class="muted">{{ m.observaciones }}</div>
+              }
+            </td>
+            <td class="td-fecha">{{ m.fechaApertura | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td>
+              <span class="tag" [ngClass]="{
+                'tag--ambar': m.estado === 'Abierta',
+                'tag--azul': m.estado === 'En proceso',
+                'tag--verde': m.estado === 'Finalizada',
+                'tag--gris': m.estado === 'Cancelada'
+              }">
+                {{ m.estado }}
+              </span>
+            </td>
+            <td>{{ m.idUsuarioResponsable || 'Técnico de Campus' }}</td>
+            <td class="ta-right">
+              @if (m.estado !== 'Finalizada') {
+                <button
+                  class="btn btn--primary"
+                  type="button"
+                  style="font-size: 12px; padding: 6px 12px;"
+                  (click)="finalizarMantenimiento(m)"
+                  title="Finalizar intervención y liberar recurso a Disponible (RN-05)">
+                  Finalizar Mantenimiento
+                </button>
+              } @else {
+                <span class="tag tag--verde">Finalizada</span>
+              }
+            </td>
+          </tr>
+        }
+
+        @if (mantenimientos.length === 0) {
+          <tr>
+            <td colspan="7" class="empty">
+              No hay órdenes de mantenimiento registradas actualmente.
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Historial de Incidentes Recientes -->
+  <div class="intro intro--tight" style="margin-top: 16px;">
+    <h2>Historial de Incidentes Reportados</h2>
+    <p>Registro histórico de novedades y anomalías reportadas en el campus.</p>
+  </div>
+
+  <div class="card">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th style="width: 50px;">#ID</th>
+          <th>Recurso</th>
+          <th>Tipo Novedad</th>
+          <th>Severidad</th>
+          <th>Descripción</th>
+          <th>Fecha Reporte</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (inc of incidentes; track inc.idIncidente) {
+          <tr>
+            <td><strong>#{{ inc.idIncidente }}</strong></td>
+            <td>
+              <strong>{{ inc.recurso?.nombre || 'Recurso #' + inc.recursoId }}</strong>
+            </td>
+            <td>{{ inc.tipo || inc.tipoNovedad }}</td>
+            <td>
+              <span class="tag" [ngClass]="{
+                'tag--rojo': inc.severidad === 'Crítica',
+                'tag--ambar': inc.severidad === 'Media',
+                'tag--verde': inc.severidad === 'Leve'
+              }">
+                {{ inc.severidad }}
+              </span>
+            </td>
+            <td>{{ inc.descripcion }}</td>
+            <td class="td-fecha">{{ inc.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+          </tr>
+        }
+
+        @if (incidentes.length === 0) {
+          <tr>
+            <td colspan="6" class="empty">
+              No hay incidentes reportados en el sistema.
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL: ABRIR ORDEN DE MANTENIMIENTO            -->
+<!-- ============================================== -->
+@if (mostrarModalNuevaOrden) {
+  <div class="modal-backdrop">
+    <div class="form-card">
+      <div class="form-card__head">
+        <h2 class="form-card__title">Nueva Orden de Mantenimiento</h2>
+        <p class="form-card__sub">Abre una orden de servicio técnico sobre un recurso universitario.</p>
+      </div>
+
+      <div class="field">
+        <label for="recursoMant">Recurso a Intervenir *</label>
+        <select id="recursoMant" [(ngModel)]="mantenimientoForm.recursoId">
+          <option [value]="0" disabled>-- Selecciona el recurso --</option>
+          @for (r of recursos; track r.idRecurso) {
+            <option [value]="r.idRecurso">
+              {{ r.nombre }} ({{ r.clase }}) - Estado: {{ r.estado }}
+            </option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="diagnostico">Diagnóstico Técnico / Motivo de Intervención *</label>
+        <textarea
+          id="diagnostico"
+          rows="3"
+          [(ngModel)]="mantenimientoForm.diagnostico"
+          placeholder="Detalla la reparación, ajuste o mantenimiento preventivo a realizar...">
+        </textarea>
+      </div>
+
+      <div class="field">
+        <label for="responsable">Técnico o Responsable Asignado</label>
+        <input
+          id="responsable"
+          type="text"
+          [(ngModel)]="mantenimientoForm.idUsuarioResponsable"
+          placeholder="Ej: TÉCNICO-CAMPUS / Soporte TI"
+        />
+      </div>
+
+      <div class="field">
+        <label for="obsOrden">Observaciones Adicionales</label>
+        <textarea
+          id="obsOrden"
+          rows="2"
+          [(ngModel)]="mantenimientoForm.observaciones"
+          placeholder="Repuestos requeridos, tiempo estimado...">
+        </textarea>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn--ghost" type="button" (click)="cerrarModalNuevaOrden()">Cancelar</button>
+        <button
+          class="btn btn--primary"
+          type="button"
+          [disabled]="guardandoOrden"
+          (click)="guardarNuevaOrden()">
+          {{ guardandoOrden ? 'Creando orden...' : 'Crear Orden' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -18,6 +18,8 @@ public class Prestamo {
     @Column(nullable = false)
     private String documento;
 
+    private String usuarioResponsable;
+
     @Column(nullable = false)
     private LocalDate fechaEntrega;
 
@@ -28,10 +30,14 @@ public class Prestamo {
 
     private String observaciones;
 
+    private String accesorios;
+
     @Column(nullable = false)
     private String estado;
 
     private LocalDate fechaDevolucion;
+
+    private String puntualidad;
 
     public Prestamo() {
     }
@@ -40,6 +46,7 @@ public class Prestamo {
                     LocalDate fechaDevolucionEstimada, String estadoEquipo, String observaciones) {
         this.recurso = recurso;
         this.documento = documento;
+        this.usuarioResponsable = documento;
         this.fechaEntrega = fechaEntrega;
         this.fechaDevolucionEstimada = fechaDevolucionEstimada;
         this.estadoEquipo = estadoEquipo;
@@ -64,11 +71,25 @@ public class Prestamo {
     }
 
     public String getDocumento() {
-        return documento;
+        return documento != null ? documento : usuarioResponsable;
     }
 
     public void setDocumento(String documento) {
         this.documento = documento;
+        if (this.usuarioResponsable == null) {
+            this.usuarioResponsable = documento;
+        }
+    }
+
+    public String getUsuarioResponsable() {
+        return usuarioResponsable != null ? usuarioResponsable : documento;
+    }
+
+    public void setUsuarioResponsable(String usuarioResponsable) {
+        this.usuarioResponsable = usuarioResponsable;
+        if (this.documento == null) {
+            this.documento = usuarioResponsable;
+        }
     }
 
     public LocalDate getFechaEntrega() {
@@ -103,6 +124,14 @@ public class Prestamo {
         this.observaciones = observaciones;
     }
 
+    public String getAccesorios() {
+        return accesorios;
+    }
+
+    public void setAccesorios(String accesorios) {
+        this.accesorios = accesorios;
+    }
+
     public String getEstado() {
         return estado;
     }
@@ -119,6 +148,38 @@ public class Prestamo {
         this.fechaDevolucion = fechaDevolucion;
     }
 
+    public String getPuntualidad() {
+        if (puntualidad != null && !puntualidad.isBlank()) {
+            return puntualidad;
+        }
+        if ("Devuelto".equalsIgnoreCase(this.estado) && fechaDevolucion != null) {
+            return fechaDevolucion.isAfter(fechaDevolucionEstimada) ? "Tardía" : "Puntual";
+        }
+        if (!"Devuelto".equalsIgnoreCase(this.estado)) {
+            return LocalDate.now().isAfter(fechaDevolucionEstimada) ? "Vencido" : "En curso";
+        }
+        return "Pendiente";
+    }
+
+    public void setPuntualidad(String puntualidad) {
+        this.puntualidad = puntualidad;
+    }
+
+    public boolean esTardio() {
+        if ("Devuelto".equalsIgnoreCase(this.estado)) {
+            return (fechaDevolucion != null && fechaDevolucion.isAfter(fechaDevolucionEstimada))
+                    || "Tardía".equalsIgnoreCase(this.puntualidad);
+        }
+        return LocalDate.now().isAfter(fechaDevolucionEstimada);
+    }
+
+    public String getEstadoColor() {
+        if (esTardio() && !"Devuelto".equalsIgnoreCase(this.estado)) {
+            return "rojo";
+        }
+        return colorDeEstado(this.estado);
+    }
+
     public static String colorDeEstado(String estado) {
         if (estado == null) {
             return "gris";
@@ -129,6 +190,9 @@ public class Prestamo {
         }
         if (e.contains("prest")) {
             return "ambar";
+        }
+        if (e.contains("vencid") || e.contains("tard")) {
+            return "rojo";
         }
         return "gris";
     }

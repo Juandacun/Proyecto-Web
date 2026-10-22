@@ -26,6 +26,8 @@ public class Incidente {
     @Column(nullable = false)
     private LocalDateTime fecha;
 
+    private String reportadoPor;
+
     public Incidente() {
     }
 
@@ -85,6 +87,18 @@ public class Incidente {
         this.fecha = fecha;
     }
 
+    public String getReportadoPor() {
+        return reportadoPor;
+    }
+
+    public void setReportadoPor(String reportadoPor) {
+        this.reportadoPor = reportadoPor;
+    }
+
+    public String getSeveridadColor() {
+        return colorDeSeveridad(this.severidad);
+    }
+
     public static String colorDeSeveridad(String severidad) {
         if (severidad == null) {
             return "gris";
@@ -95,6 +109,9 @@ public class Incidente {
         }
         if (s.contains("leve")) {
             return "verde";
+        }
+        if (s.contains("media")) {
+            return "ambar";
         }
         return "azul";
     }

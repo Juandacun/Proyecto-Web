@@ -19,6 +19,10 @@ public interface RecursoRepository extends JpaRepository<Recurso, Long>{
 
     List<Recurso> findByEstado(String estado);
 
+    List<Recurso> findByEstadoIgnoreCase(String estado);
+
+    List<Recurso> findByClaseAndEstadoIgnoreCase(Recurso.Clase clase, String estado);
+
     List<Recurso> findByTipo(String tipo);
 
     List<Recurso> findByClase(Recurso.Clase clase);

@@ -1,0 +1,21 @@
+.layout { display: flex; align-items: stretch; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 24px 16px; width: 240px; flex: none; background: #0F172A; }
+.brand { font-weight: 700; font-size: 16px; line-height: 19px; color: #fff; }
+.brand-sub { font-weight: 400; font-size: 11px; line-height: 13px; color: #94A3B8; }
+.spacer { height: 16px; }
+.nav-item { display: flex; align-items: center; padding: 10px 12px; align-self: stretch; border-radius: 6px; font-weight: 500; font-size: 13px; line-height: 16px; color: #CBD5E1; text-decoration: none; cursor: pointer; transition: background 0.15s ease; }
+.nav-item:hover { background: #1E293B; color: #CBD5E1; }
+.nav-item.is-active,
+.nav-item.active { background: #2563EB; color: #fff; }
+
+/* Main */
+.main { display: flex; flex-direction: column; flex: 1; min-width: 0; background: #F1F5F9; }
+.topbar { display: flex; justify-content: space-between; align-items: center; height: 72px; padding: 0 32px; background: #fff; border-bottom: 1px solid #E2E8F0; }
+.screen-title { font-weight: 600; font-size: 18px; line-height: 22px; color: #0F172A; }
+.right-group { display: flex; align-items: center; gap: 12px; }
+.role-pill { display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: #F1F5F9; border-radius: 999px; }
+.role-text { font-weight: 500; font-size: 12px; line-height: 15px; color: #334155; }
+.caret { font-size: 11px; line-height: 13px; color: #64748B; }
+.avatar { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 999px; background: #2563EB; color: #fff; font-weight: 600; font-size: 12px; }
