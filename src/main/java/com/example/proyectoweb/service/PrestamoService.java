@@ -43,7 +43,7 @@ public class PrestamoService {
     @Transactional(readOnly = true)
     public List<Prestamo> listarFiltrado(Long recursoId, String usuarioId, Boolean activo) {
         return repository.findAll().stream()
-                .filter(p -> recursoId == null || p.getRecurso().getIdRecurso().equals(recursoId))
+                .filter(p -> recursoId == null || (p.getRecurso() != null && p.getRecurso().getIdRecurso().equals(recursoId)))
                 .filter(p -> usuarioId == null || usuarioId.isBlank()
                         || (p.getDocumento() != null && p.getDocumento().equalsIgnoreCase(usuarioId.trim()))
                         || (p.getUsuarioResponsable() != null && p.getUsuarioResponsable().equalsIgnoreCase(usuarioId.trim())))

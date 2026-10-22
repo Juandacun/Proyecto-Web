@@ -77,7 +77,7 @@
       <!-- Banner Informativo RN-04 -->
       @if (incidenteForm.severidad === 'Crítica') {
         <div class="alerta alerta--error">
-          <span class="alerta__icono">🚨</span>
+          <span class="alerta__icono">⚠</span>
           <span><strong>Regla RN-04:</strong> Al reportar severidad <strong>"Crítica"</strong>, el recurso pasará automáticamente a estado <strong>"Bloqueado"</strong> y no podrá ser reservado ni prestado.</span>
         </div>
       }
@@ -110,7 +110,6 @@
       <p class="card__note">El módulo de incidentes y mantenimiento opera bajo las siguientes restricciones automáticas:</p>
 
       <div class="alerta alerta--error" style="margin-top: 8px;">
-        <span class="alerta__icono">🛡</span>
         <div>
           <strong>RN-04: Bloqueo Automático</strong>
           <div class="muted" style="margin-top: 2px;">Cualquier incidente con severidad 'Crítica' cambia inmediatamente el estado del recurso a 'Bloqueado'.</div>
@@ -118,7 +117,6 @@
       </div>
 
       <div class="alerta alerta--exito" style="margin-top: 8px;">
-        <span class="alerta__icono">🔧</span>
         <div>
           <strong>RN-05: Liberación por Mantenimiento</strong>
           <div class="muted" style="margin-top: 2px;">Al finalizar una intervención técnica, el sistema restaura el recurso automáticamente a estado 'Disponible'.</div>

@@ -5,6 +5,8 @@ import { Observable } from 'rxjs';
 export interface PrestamoEntregaDTO {
   recursoId: number;
   usuarioResponsable: string;
+  idUsuario?: number | string;
+  usuarioId?: number;
   fechaEntrega?: string;
   fechaLimite: string;
   estadoInicial?: string;

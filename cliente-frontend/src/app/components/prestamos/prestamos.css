@@ -30,6 +30,27 @@
 .td-fecha { font-weight: 500; white-space: nowrap; color: #475569; }
 .ta-right { text-align: right; }
 .empty { padding: 32px 20px; color: #64748B; text-align: center; font-size: 14px; }
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  gap: 12px;
+}
+.empty-state__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #0F172A;
+}
+.empty-state__sub {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: #64748B;
+  max-width: 480px;
+}
 .muted { color: #94A3B8; font-size: 12px; }
 
 /* Tags de estado */
