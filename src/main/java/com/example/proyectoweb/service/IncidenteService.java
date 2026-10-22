@@ -55,44 +55,47 @@ public class IncidenteService {
 
     // RN-04: Reporte de incidente crítico cambia el estado del recurso a bloqueado
     public Incidente registrarIncidente(IncidenteDTO dto) {
-        if (dto == null) {
-            throw new IllegalArgumentException("Los datos del incidente no pueden ser nulos.");
-        }
-        if (dto.getRecursoId() == null) {
-            throw new IllegalArgumentException("El ID del recurso afectado es obligatorio.");
-        }
-        if (dto.getDescripcion() == null || dto.getDescripcion().isBlank()) {
-            throw new IllegalArgumentException("La descripción de la novedad o falla es obligatoria.");
-        }
-
-        Recurso recurso = recursoService.buscarPorId(dto.getRecursoId());
-        if (recurso == null) {
-            throw new IllegalArgumentException("El recurso con ID " + dto.getRecursoId() + " no existe.");
-        }
-
-        String severidad = normalizarSeveridad(dto.getSeveridad());
-        String tipo = dto.getTipoNovedad() != null && !dto.getTipoNovedad().isBlank()
-                ? dto.getTipoNovedad().trim()
-                : "Daño físico";
-
-        Incidente incidente = new Incidente();
-        incidente.setRecurso(recurso);
-        incidente.setTipo(tipo);
-        incidente.setSeveridad(severidad);
-        incidente.setDescripcion(dto.getDescripcion().trim());
-        incidente.setFecha(dto.getFecha() != null ? dto.getFecha() : LocalDateTime.now());
-        incidente.setReportadoPor(dto.getUsuarioId() != null ? dto.getUsuarioId().trim() : "Anónimo");
-
-        Incidente guardado = repository.save(incidente);
-
-        // RN-04: Si la severidad es Crítica, bloquear automáticamente el recurso
-        if (esSeveridadCritica(severidad)) {
-            recurso.setEstado("Bloqueado");
-            recursoService.actualizar(recurso);
-        }
-
-        return guardado;
+    if (dto == null) {
+        throw new IllegalArgumentException("Los datos del incidente no pueden ser nulos.");
     }
+    if (dto.getRecursoId() == null) {
+        throw new IllegalArgumentException("El ID del recurso afectado es obligatorio.");
+    }
+    if (dto.getDescripcion() == null || dto.getDescripcion().isBlank()) {
+        throw new IllegalArgumentException("La descripción de la novedad o falla es obligatoria.");
+    }
+
+    String descripcion = dto.getDescripcion().trim();                        // NUEVO
+    if (descripcion.length() > 255) {                                        // NUEVO
+        throw new IllegalArgumentException("La descripción no puede superar 255 caracteres.");
+    }
+
+    Recurso recurso = recursoService.buscarPorId(dto.getRecursoId());
+    if (recurso == null) {
+        throw new IllegalArgumentException("El recurso con ID " + dto.getRecursoId() + " no existe.");
+    }
+
+    String severidad = normalizarSeveridad(dto.getSeveridad());
+    String tipo = normalizarTipo(dto.getTipoNovedad());                    
+
+    Incidente incidente = new Incidente();
+    incidente.setRecurso(recurso);
+    incidente.setTipo(tipo);
+    incidente.setSeveridad(severidad);
+    incidente.setDescripcion(descripcion);                                  
+    incidente.setFecha(LocalDateTime.now());                               
+    incidente.setReportadoPor(dto.getUsuarioId() != null ? dto.getUsuarioId().trim() : "Anónimo");
+
+    Incidente guardado = repository.save(incidente);
+
+    // RN-04: Si la severidad es Crítica, bloquear automáticamente el recurso
+    if (esSeveridadCritica(severidad)) {
+        recurso.setEstado("Bloqueado");
+        recursoService.actualizar(recurso);
+    }
+
+    return guardado;
+}
 
     // Sobrecarga para compatibilidad con código existente
     public Incidente guardar(Incidente incidente) {
@@ -114,18 +117,35 @@ public class IncidenteService {
         return s.contains("critic");
     }
 
+    private static final List<String> TIPOS = List.of(
+        "Daño físico", "Falla de funcionamiento",
+        "Accesorio faltante", "Condición inadecuada del espacio");
+
     private String normalizarSeveridad(String severidad) {
         if (severidad == null || severidad.isBlank()) {
             return "Media";
         }
-        String s = java.text.Normalizer.normalize(severidad, java.text.Normalizer.Form.NFD)
+        String s = sinTildes(severidad);
+        if (s.contains("critic")) return "Crítica";
+        if (s.contains("leve")) return "Leve";
+        if (s.contains("media")) return "Media";
+        throw new IllegalArgumentException("Severidad no válida. Opciones: Leve, Media, Crítica.");
+    }
+
+    private String normalizarTipo(String tipo) {
+        if (tipo == null || tipo.isBlank()) {
+            return "Daño físico";
+        }
+        String buscado = sinTildes(tipo);
+        for (String t : TIPOS) {
+            if (sinTildes(t).equals(buscado)) return t;
+        }
+        throw new IllegalArgumentException(
+                "Tipo de novedad no válido. Opciones: " + String.join(", ", TIPOS));
+    }
+
+    private String sinTildes(String texto) {
+        return java.text.Normalizer.normalize(texto.trim(), java.text.Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "").toLowerCase();
-        if (s.contains("critic")) {
-            return "Crítica";
-        }
-        if (s.contains("leve")) {
-            return "Leve";
-        }
-        return "Media";
     }
 }
