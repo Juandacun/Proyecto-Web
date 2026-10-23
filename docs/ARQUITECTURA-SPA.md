@@ -12,12 +12,14 @@ Documento de diseño de la segunda entrega: cómo está construida la aplicació
 │     ├── /catalogo       CatalogoComponent                         │
 │     ├── /reservas       ReservasComponent                         │
 │     ├── /prestamos      PrestamosComponent                        │
-│     └── /mantenimiento  MantenimientoComponent                    │
+│     ├── /mantenimiento  MantenimientoComponent                    │
+│     └── /tablero        TableroComponent                          │
 │                 │ inyectan                                        │
 │                 ▼                                                 │
 │  Servicios HTTP: RecursoService, ReservaService, PrestamoService, │
 │                  IncidenteService, MantenimientoService,          │
-│                  UsuarioService                                   │
+│                  IndicadorService, CategoriaService,              │
+│                  UbicacionService, UsuarioService                 │
 └─────────────────┬─────────────────────────────────────────────────┘
                   │ JSON sobre HTTP (GET/POST/PUT/PATCH/DELETE)
                   ▼
@@ -26,7 +28,8 @@ Documento de diseño de la segunda entrega: cómo está construida la aplicació
 │                                                                    │
 │  @RestController  /api/recursos, /api/categorias, /api/ubicaciones,│
 │                   /api/reservas, /api/prestamos, /api/incidentes,  │
-│                   /api/mantenimientos, /api/usuarios               │
+│                   /api/mantenimientos, /api/usuarios,              │
+│                   /api/indicadores                                 │
 │        │                                                           │
 │        ▼                                                           │
 │  @Service   reglas de negocio RN-01 … RN-05, validaciones,         │
@@ -59,6 +62,7 @@ El cliente y el servidor son proyectos independientes que se comunican solo por 
 | `reservas` | `ReservasComponent` | Solicitante |
 | `prestamos` | `PrestamosComponent` | Gestor de recursos |
 | `mantenimiento` | `MantenimientoComponent` | Gestor de recursos |
+| `tablero` | `TableroComponent` | Gestor de recursos |
 | `**` | redirige a `catalogo` | — |
 
 La barra lateral (`app.html`) usa `routerLink` y `routerLinkActive`, así que cambiar de módulo no recarga la página.
@@ -69,7 +73,7 @@ La barra lateral (`app.html`) usa `routerLink` y `routerLinkActive`, así que ca
 |------|-----------------|----------|
 | Componentes | Estado de la vista, formularios, mensajes de éxito/error, filtros en memoria | `components/*/*.ts|html|css` |
 | Servicios | Un servicio por recurso REST; arma URLs y `HttpParams`, tipa DTOs | `services/*.ts` |
-| Interfaces | Contratos de datos (`Reserva`, `ReservaDTO`, `Disponibilidad`, `PrestamoEntregaDTO`, `IncidenteDTO`, `MantenimientoDTO`, `Usuario`) | dentro de cada servicio |
+| Interfaces | Contratos de datos (`Reserva`, `ReservaDTO`, `Disponibilidad`, `PrestamoEntregaDTO`, `IncidenteDTO`, `MantenimientoDTO`, `Indicadores`, `Categoria`, `Ubicacion`, `Usuario`) | dentro de cada servicio |
 
 Los componentes nunca usan `HttpClient` directamente: siempre pasan por un servicio inyectable (`providedIn: 'root'`).
 
@@ -77,7 +81,9 @@ Los componentes nunca usan `HttpClient` directamente: siempre pasan por un servi
 
 | Componente | Acción | Servicio | Endpoint |
 |-----------|--------|----------|----------|
-| Catálogo | Listar y filtrar recursos | `RecursoService.obtenerRecursos` | `GET /api/recursos?clase&estado&disponible` |
+| Catálogo | Listar y filtrar recursos | `RecursoService.obtenerRecursos` | `GET /api/recursos?clase&estado&categoriaId&ubicacionId&tipo` |
+| | Opciones de los filtros | `CategoriaService.listar`, `UbicacionService.listar` | `GET /api/categorias`, `GET /api/ubicaciones` |
+| | Detalle y próximas reservas | `ReservaService.listar` | `GET /api/reservas?recursoId&estado=Confirmada` |
 | Reservas | Listar reservas | `ReservaService.listar` | `GET /api/reservas` |
 | | Cargar espacios | `RecursoService.obtenerRecursos({clase:'ESPACIO'})` | `GET /api/recursos?clase=ESPACIO` |
 | | Cargar solicitantes | `UsuarioService.listar` | `GET /api/usuarios` |
@@ -93,10 +99,16 @@ Los componentes nunca usan `HttpClient` directamente: siempre pasan por un servi
 | | Listar / reportar incidentes | `IncidenteService.listar` / `registrar` | `GET` / `POST /api/incidentes` |
 | | Listar / abrir órdenes | `MantenimientoService.listar` / `crearOrden` | `GET` / `POST /api/mantenimientos` |
 | | Finalizar orden | `MantenimientoService.finalizar` | `PATCH /api/mantenimientos/{id}/finalizar` |
+| | Iniciar / cancelar orden | `MantenimientoService.cambiarEstado` | `PATCH /api/mantenimientos/{id}/estado` |
+| Tablero | Indicadores y estado actual | `IndicadorService.obtener` | `GET /api/indicadores` |
 
 ### 2.5 Manejo de errores en la interfaz
 
 Los servicios devuelven `Observable`; cada componente se suscribe con `next` / `error`. En el `error` se lee `err.error.error` (mensaje del servidor) y se muestra al usuario. Así, las violaciones de RN-01/RN-02/RN-03 (HTTP 409) aparecen como mensajes claros, cumpliendo el requisito de "mensajes claros de éxito o error".
+
+### 2.6 Diseño responsive
+
+El layout (`app.css`) convierte el menú lateral en una barra superior desplazable por debajo de 760 px. Cada módulo apila sus filtros y formularios, y las tablas se desplazan horizontalmente dentro de su tarjeta (en reservas y tablero se muestran como fichas).
 
 ## 3. Diseño de los servicios REST
 
@@ -108,6 +120,7 @@ Los servicios devuelven `Observable`; cada componente se suscribe con `next` / `
    - `POST` crea y responde `201 Created` con cabecera `Location`.
    - `PUT` reemplaza los datos editables de un elemento.
    - `PATCH` sobre sub-recursos de acción para **transiciones de estado**: `/{id}/cancelar`, `/{id}/finalizar`, `/{id}/devolucion`, `/{id}/estado`.
+   - Los indicadores se exponen como un recurso de solo lectura (`GET /api/indicadores`) calculado en el servidor, para que la SPA no tenga que descargar todas las reservas y préstamos para contarlos.
    - `DELETE` elimina y responde `204 No Content`.
 3. **Filtros por query string** en los listados (`?recursoId=&fecha=&estado=`), combinables.
 4. **Errores uniformes** en JSON `{ "error": "...", "codigo": "RN-0X" }` con el código HTTP adecuado (`400`, `404`, `409`).
@@ -155,6 +168,8 @@ Usuario (catálogo de solicitantes/responsables)
 | `Categoria` / `Ubicacion` | nombre, descripción (+ edificio en ubicación) |
 | `Usuario` | nombre, tipo, código, documento, email |
 
+Estados válidos del recurso: `Disponible`, `Reservado`, `Prestado`, `Bloqueado`. Estados de la orden de mantenimiento: `Abierta` → `En proceso` → `Finalizada` | `Cancelada`.
+
 ### 3.4 Ciclo de vida del estado de un recurso
 
 ```
@@ -197,10 +212,11 @@ Pruebas de controladores con `MockMvc` (`src/test/java/.../controller`):
 
 | Clase | Qué cubre |
 |-------|-----------|
-| `RecursoControllerTest` | CRUD de recursos, filtros, cambio de estado |
+| `RecursoControllerTest` | CRUD de recursos, filtros combinables (categoría, ubicación, tipo, clase, estado), cambio de estado |
 | `ReservaControllerTest` | Creación, RN-01, RN-02, edición, cancelación, verificación de disponibilidad |
 | `PrestamoControllerTest` | Entrega, RN-02, RN-03, devolución puntual/tardía |
-| `IncidenteMantenimientoTest` | RN-04 (bloqueo por incidente crítico) y RN-05 (habilitación) |
+| `IncidenteMantenimientoTest` | RN-04 (bloqueo por incidente crítico), RN-05 (habilitación) y cambios de estado de la orden |
+| `IndicadorControllerTest` | Estructura de los indicadores y actualización tras un incidente crítico |
 | `CategoriaUbicacionTest` | CRUD de categorías y ubicaciones |
 
 Se ejecutan con `./mvnw test`.
@@ -212,5 +228,5 @@ Según el enunciado, la autenticación y autorización por roles no se implement
 | Rol | Endpoints que usará |
 |-----|---------------------|
 | Solicitante | `GET /api/recursos*`, `GET/POST/PUT /api/reservas`, `PATCH /api/reservas/{id}/cancelar`, `GET /api/prestamos?usuarioId=`, `POST /api/incidentes` |
-| Gestor de recursos | Todo lo anterior + `/api/prestamos/**`, `/api/mantenimientos/**`, `PATCH /api/recursos/{id}/estado`, `PATCH /api/reservas/{id}/finalizar` |
+| Gestor de recursos | Todo lo anterior + `/api/prestamos/**`, `/api/mantenimientos/**`, `/api/indicadores`, `PATCH /api/recursos/{id}/estado`, `PATCH /api/reservas/{id}/finalizar` |
 | Administrador | Todo lo anterior + CRUD de `/api/recursos`, `/api/categorias`, `/api/ubicaciones`, `/api/usuarios` |
