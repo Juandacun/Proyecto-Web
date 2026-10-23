@@ -1,14 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { RecursoService } from '../../services/recurso';
 import { CategoriaService, Categoria } from '../../services/categoria';
 import { UbicacionService, Ubicacion } from '../../services/ubicacion';
+import { ReservaService, Reserva } from '../../services/reserva';
 
 @Component({
   selector: 'app-catalogo',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './catalogo.html',
   styleUrls: ['./catalogo.css']
 })
@@ -25,10 +27,16 @@ export class CatalogoComponent implements OnInit {
   ubicacionSeleccionada: number | null = null;
   tipoSeleccionado: string = '';
 
+  // Panel de detalle y disponibilidad básica
+  recursoDetalle: any = null;
+  proximasReservas: Reserva[] = [];
+  cargandoReservas = false;
+
   constructor(
     private recursoService: RecursoService,
     private categoriaService: CategoriaService,
-    private ubicacionService: UbicacionService
+    private ubicacionService: UbicacionService,
+    private reservaService: ReservaService
   ) {}
 
   ngOnInit(): void {
@@ -103,6 +111,22 @@ export class CatalogoComponent implements OnInit {
   }
 
   verDetalle(recurso: any) {
-    alert(`Detalle del recurso:\nNombre: ${recurso.nombre}\nEstado: ${recurso.estado}`);
+    this.recursoDetalle = recurso;
+    this.proximasReservas = [];
+    if (recurso.clase !== 'ESPACIO') return;
+
+    this.cargandoReservas = true;
+    const hoy = new Date().toISOString().slice(0, 10);
+    this.reservaService.listar({ recursoId: recurso.idRecurso, estado: 'Confirmada' }).subscribe({
+      next: (data) => {
+        this.proximasReservas = data.filter((r) => r.fecha >= hoy);
+        this.cargandoReservas = false;
+      },
+      error: () => (this.cargandoReservas = false)
+    });
+  }
+
+  cerrarDetalle() {
+    this.recursoDetalle = null;
   }
 }

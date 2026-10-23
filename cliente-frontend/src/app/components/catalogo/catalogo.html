@@ -81,9 +81,12 @@
                     }}</span>
                 <div class="recurso__acciones"
                     style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
-                    <button *ngIf="r.estado === 'Disponible'" class="btn btn--primary btn--sm"
-                        (click)="verDetalle(r)">Prestar</button>
-                    <span *ngIf="r.estado !== 'Disponible'" class="muted">No disponible</span>
+                    <a *ngIf="r.estado === 'Disponible' && r.clase === 'EQUIPO'" class="btn btn--primary btn--sm"
+                        routerLink="/prestamos">Prestar</a>
+                    <a *ngIf="r.clase === 'ESPACIO' && r.estado !== 'Bloqueado'" class="btn btn--primary btn--sm"
+                        routerLink="/reservas">Reservar</a>
+                    <span *ngIf="r.estado !== 'Disponible' && !(r.clase === 'ESPACIO' && r.estado !== 'Bloqueado')"
+                        class="muted">No disponible</span>
                     <a class="recurso__link" (click)="verDetalle(r)" style="cursor: pointer;">Ver
                         disponibilidad</a>
                 </div>
@@ -92,5 +95,54 @@
 
         <p *ngIf="recursosFiltrados.length === 0" class="empty">No hay recursos que coincidan con los filtros.
         </p>
+    </div>
+
+    <!-- Panel de detalle del recurso -->
+    <div class="modal-backdrop" *ngIf="recursoDetalle" (click)="cerrarDetalle()">
+        <div class="detalle-card" (click)="$event.stopPropagation()">
+            <div class="detalle-card__head">
+                <div>
+                    <h2 class="detalle-card__title">{{ recursoDetalle.nombre }}</h2>
+                    <span class="recurso__meta">{{ recursoDetalle.clase === 'ESPACIO' ? 'Espacio' : 'Equipo' }} · {{ recursoDetalle.tipo }}</span>
+                </div>
+                <span class="tag" [ngClass]="{
+                    'tag--verde': recursoDetalle.estado === 'Disponible',
+                    'tag--azul': recursoDetalle.estado === 'Reservado',
+                    'tag--ambar': recursoDetalle.estado === 'Prestado',
+                    'tag--rojo': recursoDetalle.estado === 'Bloqueado'
+                }">{{ recursoDetalle.estado }}</span>
+            </div>
+
+            <p class="detalle__desc" *ngIf="recursoDetalle.descripcion">{{ recursoDetalle.descripcion }}</p>
+
+            <dl class="atributos">
+                <div class="atributo"><dt>CATEGORÍA</dt><dd>{{ recursoDetalle.categoria?.nombre || '—' }}</dd></div>
+                <div class="atributo"><dt>UBICACIÓN</dt><dd>{{ recursoDetalle.ubicacion?.nombre || '—' }}</dd></div>
+                <div class="atributo" *ngIf="recursoDetalle.ubicacion?.edificio"><dt>EDIFICIO</dt><dd>{{ recursoDetalle.ubicacion.edificio }}</dd></div>
+                <div class="atributo"><dt>CARACTERÍSTICAS</dt><dd>{{ recursoDetalle.caracteristicas || '—' }}</dd></div>
+            </dl>
+
+            <div *ngIf="recursoDetalle.clase === 'ESPACIO'">
+                <h3 class="card__title">Próximas reservas confirmadas</h3>
+                <p class="muted" *ngIf="cargandoReservas">Cargando...</p>
+                <ul class="franjas" *ngIf="!cargandoReservas && proximasReservas.length > 0">
+                    <li *ngFor="let res of proximasReservas">
+                        <span>{{ res.fecha | date:'dd/MM/yyyy' }}</span>
+                        <strong>{{ res.horaInicio }} – {{ res.horaFin }}</strong>
+                    </li>
+                </ul>
+                <p class="card__note" *ngIf="!cargandoReservas && proximasReservas.length === 0">
+                    Sin reservas próximas: todos los horarios están libres.
+                </p>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn--ghost" type="button" (click)="cerrarDetalle()">Cerrar</button>
+                <a *ngIf="recursoDetalle.clase === 'ESPACIO' && recursoDetalle.estado !== 'Bloqueado'"
+                    class="btn btn--primary" routerLink="/reservas">Reservar</a>
+                <a *ngIf="recursoDetalle.clase === 'EQUIPO' && recursoDetalle.estado === 'Disponible'"
+                    class="btn btn--primary" routerLink="/prestamos">Prestar</a>
+            </div>
+        </div>
     </div>
 </section>
