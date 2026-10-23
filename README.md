@@ -31,7 +31,7 @@ Más detalle en [docs/ARQUITECTURA-SPA.md](docs/ARQUITECTURA-SPA.md).
 ## Requisitos
 
 - Java 21
-- Node.js **22.22+** (o 24.15+) y npm — exigido por Angular CLI 22
+- Node.js **22.22+** (o 24.15+) y npm — exigido por Angular CLI 22. Si `node_modules` se instaló en Windows y se compila desde WSL (o al revés), hay que reinstalarlo con `npm ci` en ese sistema.
 - No se necesita instalar Maven: se usa el wrapper `./mvnw`
 
 ## Ejecución
@@ -72,16 +72,17 @@ Abrir `http://localhost:4200`. La SPA consume la API en `http://localhost:8080/a
 ./mvnw test
 ```
 
-Pruebas de controladores con MockMvc sobre H2 en memoria (`src/test/`): recursos, reservas, préstamos, incidentes/mantenimiento y categorías/ubicaciones.
+Pruebas de controladores con MockMvc sobre H2 en memoria (`src/test/`): recursos, reservas, préstamos, incidentes/mantenimiento, indicadores y categorías/ubicaciones.
 
 ## Módulos de la SPA
 
 | Ruta | Componente | Funcionalidad |
 |------|-----------|---------------|
-| `/catalogo` | `CatalogoComponent` | Catálogo y búsqueda de recursos por texto, clase y estado |
+| `/catalogo` | `CatalogoComponent` | Catálogo con búsqueda por texto y filtros por clase, estado, categoría, ubicación y tipo; detalle del recurso con sus próximas reservas |
 | `/reservas` | `ReservasComponent` | Crear, consultar, modificar, cancelar y finalizar reservas con verificación de disponibilidad |
 | `/prestamos` | `PrestamosComponent` | Entrega y devolución de equipos; pestañas de activos, tardíos y todos |
-| `/mantenimiento` | `MantenimientoComponent` | Reporte de incidentes y órdenes de mantenimiento |
+| `/mantenimiento` | `MantenimientoComponent` | Reporte de incidentes y órdenes de mantenimiento (abrir, iniciar, finalizar, cancelar) |
+| `/tablero` | `TableroComponent` | Indicadores: recursos por estado, reservas por recurso y categoría, préstamos activos, devoluciones tardías e incidentes |
 
 ## Reglas de negocio
 
@@ -97,7 +98,6 @@ Pruebas de controladores con MockMvc sobre H2 en memoria (`src/test/`): recursos
 
 - [docs/API-REST.md](docs/API-REST.md) — referencia completa de endpoints, cuerpos, respuestas y códigos de error.
 - [docs/ARQUITECTURA-SPA.md](docs/ARQUITECTURA-SPA.md) — diseño de servicios REST y arquitectura SPA.
-- [docs/CUMPLIMIENTO-ENTREGA-2.md](docs/CUMPLIMIENTO-ENTREGA-2.md) — verificación de requisitos de la segunda entrega.
 - `Incidentes CampusRecursos.postman_collection.json` — colección Postman para probar incidentes.
 
 ## Estructura del repositorio
@@ -106,8 +106,8 @@ Pruebas de controladores con MockMvc sobre H2 en memoria (`src/test/`): recursos
 .
 ├── cliente-frontend/           SPA Angular
 │   └── src/app/
-│       ├── components/         catalogo, reservas, prestamos, mantenimiento
-│       └── services/           clientes HTTP de la API (recurso, reserva, prestamo, ...)
+│       ├── components/         catalogo, reservas, prestamos, mantenimiento, tablero
+│       └── services/           clientes HTTP de la API (recurso, reserva, prestamo, indicador, ...)
 ├── src/main/java/com/example/proyectoweb/
 │   ├── config/                 CORS (WebConfig) y OpenAPI (OpenApiConfig)
 │   ├── controller/             controladores REST (/api/...) y MPA (Thymeleaf)
