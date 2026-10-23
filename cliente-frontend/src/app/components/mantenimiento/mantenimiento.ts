@@ -93,48 +93,52 @@ export class MantenimientoComponent implements OnInit {
   }
 
   // --- Reporte de Incidente (RN-04) ---
-  reportarIncidente(): void {
-    if (!this.incidenteForm.recursoId || this.incidenteForm.recursoId === 0) {
-      alert('Por favor selecciona un recurso afectado.');
-      return;
-    }
-    if (!this.incidenteForm.descripcion?.trim()) {
-      alert('Por favor detalla la descripción del incidente.');
-      return;
-    }
+ reportarIncidente(): void {
+  this.mensajeError = null;
 
-    this.guardandoIncidente = true;
-    this.incidenteForm.recursoId = Number(this.incidenteForm.recursoId);
-
-    this.incidenteService.registrar(this.incidenteForm).subscribe({
-      next: (res) => {
-        this.guardandoIncidente = false;
-        const esCritico = this.incidenteForm.severidad === 'Crítica';
-
-        if (esCritico) {
-          this.mostrarMensajeExito(
-            `¡Incidente Crítico reportado con éxito (RN-04)! El recurso "${this.recursoSeleccionadoParaIncidente?.nombre}" ha pasado automáticamente a estado "Bloqueado".`
-          );
-        } else {
-          this.mostrarMensajeExito(
-            `Incidente de severidad ${this.incidenteForm.severidad} registrado correctamente.`
-          );
-        }
-
-        // Reset form
-        this.incidenteForm.descripcion = '';
-        this.incidenteForm.recursoId = 0;
-        this.recursoSeleccionadoParaIncidente = null;
-
-        this.cargarDatos();
-      },
-      error: (err) => {
-        this.guardandoIncidente = false;
-        alert(`Error al registrar incidente: ${err.error?.error || err.message}`);
-      }
-    });
+  if (!this.incidenteForm.recursoId || Number(this.incidenteForm.recursoId) === 0) {
+    this.mensajeError = 'Selecciona el recurso afectado.';
+    return;
+  }
+  if (!this.incidenteForm.descripcion?.trim()) {
+    this.mensajeError = 'Escribe la descripción del incidente.';
+    return;
+  }
+  if (this.incidenteForm.descripcion.length > 255) {
+    this.mensajeError = 'La descripción no puede superar 255 caracteres.';
+    return;
   }
 
+  this.guardandoIncidente = true;
+  this.incidenteForm.recursoId = Number(this.incidenteForm.recursoId);
+
+  this.incidenteService.registrar(this.incidenteForm).subscribe({
+    next: (res) => {
+      this.guardandoIncidente = false;
+      const nombre = this.recursoSeleccionadoParaIncidente?.nombre;
+
+      if (res?.recurso?.estado === 'Bloqueado') {
+        this.mostrarMensajeExito(
+          `Incidente crítico reportado. El recurso "${nombre}" quedó Bloqueado (RN-04).`
+        );
+      } else {
+        this.mostrarMensajeExito(
+          `Incidente de severidad ${res?.severidad ?? this.incidenteForm.severidad} registrado correctamente.`
+        );
+      }
+
+      this.incidenteForm.descripcion = '';
+      this.incidenteForm.recursoId = 0;
+      this.recursoSeleccionadoParaIncidente = null;
+      this.cargarDatos();
+    },
+    error: (err) => {
+      this.guardandoIncidente = false;
+      this.mensajeError =
+        err.error?.error || 'No se pudo registrar el incidente. Intenta de nuevo.';
+    }
+  });
+}
   // --- Finalizar Mantenimiento (RN-05) ---
   finalizarMantenimiento(mantenimiento: any): void {
     if (!confirm(`¿Deseas finalizar la orden de mantenimiento #${mantenimiento.idMantenimiento}? El recurso volverá automáticamente al estado "Disponible" (RN-05).`)) {

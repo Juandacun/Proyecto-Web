@@ -1,0 +1,176 @@
+{
+  "info": {
+    "_postman_id": "1056b5ad-14af-447f-8ecf-cf428a117cf8",
+    "name": "Incidentes CampusRecursos",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "59127671",
+    "_collection_link": "https://go.postman.co/collection/59127671-1056b5ad-14af-447f-8ecf-cf428a117cf8?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Listar Incidentes",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/incidentes",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "incidentes"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Reportar Incidente Leve",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"recursoId\": 2, \"tipoNovedad\": \"Daño físico\", \"severidad\": \"Leve\", \"descripcion\": \"Silla rota\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/incidentes",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "incidentes"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Descripción Vacía",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"recursoId\": 2, \"tipoNovedad\": \"Daño físico\", \"severidad\": \"Leve\", \"descripcion\": \"\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/incidentes",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "incidentes"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Recurso Inexistente",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"recursoId\": 9999, \"tipoNovedad\": \"Daño físico\", \"severidad\": \"Leve\", \"descripcion\": \"Silla rota\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/incidentes",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "incidentes"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Severidad Invalida",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"recursoId\": 1, \"tipoNovedad\": \"Otro\", \"severidad\": \"Gravisima\", \"descripcion\": \"prueba\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/incidentes",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "incidentes"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Reportar Incidente Grave",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"recursoId\": 2, \"tipoNovedad\": \"Daño físico\", \"severidad\": \"Leve\", \"descripcion\": \"Silla rota\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/incidentes",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "incidentes"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
