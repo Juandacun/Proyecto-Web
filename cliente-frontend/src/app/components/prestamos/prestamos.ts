@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { finalize, switchMap, catchError, of, Subject, Subscription } from 'rxjs';
 import { PrestamoService, PrestamoEntregaDTO, PrestamoDevolucionDTO } from '../../services/prestamo';
 import { RecursoService } from '../../services/recurso';
 import { UsuarioService, Usuario } from '../../services/usuario';
@@ -12,8 +13,9 @@ import { UsuarioService, Usuario } from '../../services/usuario';
   templateUrl: './prestamos.html',
   styleUrls: ['./prestamos.css']
 })
-export class PrestamosComponent implements OnInit {
+export class PrestamosComponent implements OnInit, OnDestroy {
   prestamos: any[] = [];
+  todosLosPrestamos: any[] = []; // Caché en memoria para filtrado y respuesta instantánea (0ms)
   equiposDisponibles: any[] = [];
   usuarios: Usuario[] = [];
 
@@ -22,6 +24,10 @@ export class PrestamosComponent implements OnInit {
   cargando = false;
   mensajeExito: string | null = null;
   mensajeError: string | null = null;
+
+  // Pipeline reactivo para cambio de pestañas con cancelación automática de peticiones previas (switchMap)
+  private tabChange$ = new Subject<'todos' | 'activos' | 'tardios'>();
+  private tabSubscription?: Subscription;
 
   // Horas del campus (07:00 a 21:00)
   horasCampus: string[] = [
@@ -46,6 +52,8 @@ export class PrestamosComponent implements OnInit {
   entregaForm: PrestamoEntregaDTO = {
     recursoId: 0,
     usuarioResponsable: '',
+    idUsuario: '',
+    usuarioId: undefined,
     fechaEntrega: '',
     fechaLimite: '',
     estadoInicial: 'Operativo',
@@ -70,62 +78,134 @@ export class PrestamosComponent implements OnInit {
   constructor(
     private prestamoService: PrestamoService,
     private recursoService: RecursoService,
-    private usuarioService: UsuarioService
+    private usuarioService: UsuarioService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
+    this.iniciarFlujoPestanas();
     this.cargarPrestamos();
     this.cargarEquipos();
     this.cargarUsuarios();
   }
 
-  cargarPrestamos(): void {
-    this.cargando = true;
-    this.mensajeError = null;
+  ngOnDestroy(): void {
+    if (this.tabSubscription) {
+      this.tabSubscription.unsubscribe();
+    }
+    this.tabChange$.complete();
+  }
 
-    if (this.tabSeleccionada === 'activos') {
-      this.prestamoService.listarActivos().subscribe({
-        next: (data) => {
+  /**
+   * Configura el flujo reactivo con switchMap:
+   * 1. Cancela automáticamente peticiones previas en curso si el usuario cambia rápido de pestaña.
+   * 2. Aplica primero el filtro en memoria (0ms) para que la pantalla no se congele.
+   * 3. Apaga this.cargando = false de inmediato y fuerza la detección de cambios (cdr.detectChanges).
+   */
+  private iniciarFlujoPestanas(): void {
+    this.tabSubscription = this.tabChange$
+      .pipe(
+        switchMap((tab) => {
+          this.tabSeleccionada = tab;
+          this.mensajeError = null;
+
+          // Si ya tenemos datos en memoria, actualizamos la vista de inmediato
+          this.aplicarFiltroEnMemoria(tab);
+
+          // Si aún no hay datos en memoria, mostramos el indicador de carga
+          if (!this.todosLosPrestamos || this.todosLosPrestamos.length === 0) {
+            this.cargando = true;
+          }
+          this.cdr.detectChanges();
+
+          let request$;
+          if (tab === 'activos') {
+            request$ = this.prestamoService.listarActivos();
+          } else if (tab === 'tardios') {
+            request$ = this.prestamoService.listarTardios();
+          } else {
+            request$ = this.prestamoService.listar();
+          }
+
+          return request$.pipe(
+            catchError((err) => {
+              console.error(`Error al consultar préstamos (${tab}):`, err);
+              this.mensajeError =
+                err?.error?.message || err?.error?.error || err?.message || 'Error al conectar con el servidor.';
+              return of(null);
+            }),
+            finalize(() => {
+              this.cargando = false;
+              this.cdr.detectChanges();
+            })
+          );
+        })
+      )
+      .subscribe((data) => {
+        this.cargando = false;
+        if (data !== null && Array.isArray(data)) {
           this.prestamos = data;
-          this.cargando = false;
-        },
-        error: (err) => {
-          console.error(err);
-          this.mensajeError = 'Error al cargar préstamos activos.';
-          this.cargando = false;
+          if (this.tabSeleccionada === 'todos') {
+            this.todosLosPrestamos = [...data];
+          }
+        } else if (this.todosLosPrestamos.length > 0) {
+          this.aplicarFiltroEnMemoria(this.tabSeleccionada);
         }
+        this.cdr.detectChanges();
       });
-    } else if (this.tabSeleccionada === 'tardios') {
-      this.prestamoService.listarTardios().subscribe({
-        next: (data) => {
-          this.prestamos = data;
-          this.cargando = false;
-        },
-        error: (err) => {
-          console.error(err);
-          this.mensajeError = 'Error al cargar préstamos tardíos.';
-          this.cargando = false;
+  }
+
+  /**
+   * Filtra instantáneamente la lista en memoria para responder en 0ms sin bloqueos
+   */
+  private aplicarFiltroEnMemoria(tab: 'todos' | 'activos' | 'tardios'): void {
+    if (!this.todosLosPrestamos || this.todosLosPrestamos.length === 0) {
+      return;
+    }
+    if (tab === 'activos') {
+      this.prestamos = this.todosLosPrestamos.filter((p) => {
+        const est = (p.estado || '').toLowerCase();
+        return !p.fechaDevolucion && !est.startsWith('devuelt');
+      });
+    } else if (tab === 'tardios') {
+      const hoy = new Date().toISOString().split('T')[0];
+      this.prestamos = this.todosLosPrestamos.filter((p) => {
+        if (p.puntualidad === 'Tardía' || p.puntualidad === 'Vencido') {
+          return true;
         }
+        const limite = (p.fechaDevolucionEstimada || p.fechaLimite || '').split('T')[0];
+        const noDevuelto = !p.fechaDevolucion && !(p.estado || '').toLowerCase().startsWith('devuelt');
+        return noDevuelto && limite && limite < hoy;
       });
     } else {
-      this.prestamoService.listar().subscribe({
-        next: (data) => {
-          this.prestamos = data;
-          this.cargando = false;
-        },
-        error: (err) => {
-          console.error(err);
-          this.mensajeError = 'Error al cargar historial de préstamos.';
-          this.cargando = false;
-        }
-      });
+      this.prestamos = [...this.todosLosPrestamos];
     }
+  }
+
+  cargarPrestamos(): void {
+    // Si no tenemos la lista completa en memoria, la precargamos en background
+    this.prestamoService.listar().subscribe({
+      next: (todos) => {
+        if (Array.isArray(todos)) {
+          this.todosLosPrestamos = todos;
+          if (this.tabSeleccionada !== 'todos') {
+            this.aplicarFiltroEnMemoria(this.tabSeleccionada);
+            this.cdr.detectChanges();
+          }
+        }
+      },
+      error: () => {}
+    });
+
+    // Emite la carga de la pestaña activa a través de switchMap
+    this.tabChange$.next(this.tabSeleccionada);
   }
 
   cargarEquipos(): void {
     this.recursoService.listarEquipos().subscribe({
       next: (data) => {
         this.equiposDisponibles = data;
+        this.cdr.detectChanges();
       },
       error: (err) => console.error('Error al cargar equipos', err)
     });
@@ -135,6 +215,7 @@ export class PrestamosComponent implements OnInit {
     this.usuarioService.listar().subscribe({
       next: (data) => {
         this.usuarios = data;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.warn('Backend /api/usuarios no disponible aún, usando datos institucionales de reserva.', err);
@@ -146,13 +227,18 @@ export class PrestamosComponent implements OnInit {
           { idUsuario: 5, nombre: 'Laura Martínez', tipo: 'Estudiante', codigo: 'EST-202411' },
           { idUsuario: 6, nombre: 'David Morales', tipo: 'Estudiante', codigo: 'EST-202412' }
         ];
+        this.cdr.detectChanges();
       }
     });
   }
 
   cambiarTab(tab: 'todos' | 'activos' | 'tardios'): void {
     this.tabSeleccionada = tab;
-    this.cargarPrestamos();
+    // Filtrado en memoria instantáneo
+    this.aplicarFiltroEnMemoria(tab);
+    this.cdr.detectChanges();
+    // Dispara la petición a través de switchMap (cancela peticiones HTTP anteriores en vuelo)
+    this.tabChange$.next(tab);
   }
 
   // --- Modal Entrega (RN-02, RN-03) ---
@@ -160,6 +246,7 @@ export class PrestamosComponent implements OnInit {
     this.cargarEquipos();
     this.cargarUsuarios();
     this.mostrarModalEntrega = true;
+    this.guardandoEntrega = false;
     this.equipoSeleccionado = null;
     this.usuarioSeleccionadoId = '';
     this.errorModalEntrega = null;
@@ -179,25 +266,31 @@ export class PrestamosComponent implements OnInit {
     this.entregaForm = {
       recursoId: 0,
       usuarioResponsable: '',
+      idUsuario: '',
+      usuarioId: undefined,
       fechaEntrega: '',
       fechaLimite: '',
       estadoInicial: 'Operativo',
       observaciones: '',
       accesorios: 'Cables, cargador, estuche'
     };
+    this.cdr.detectChanges();
   }
 
   cerrarModalEntrega(): void {
     this.mostrarModalEntrega = false;
+    this.guardandoEntrega = false;
     this.equipoSeleccionado = null;
     this.usuarioSeleccionadoId = '';
     this.errorModalEntrega = null;
+    this.cdr.detectChanges();
   }
 
   onSeleccionarEquipo(): void {
     this.errorModalEntrega = null;
     const id = Number(this.entregaForm.recursoId);
     this.equipoSeleccionado = this.equiposDisponibles.find((e) => e.idRecurso === id) || null;
+    this.cdr.detectChanges();
   }
 
   onSeleccionarUsuario(): void {
@@ -210,6 +303,7 @@ export class PrestamosComponent implements OnInit {
     } else {
       this.entregaForm.usuarioResponsable = '';
     }
+    this.cdr.detectChanges();
   }
 
   private normalizarHora(hora: string): string {
@@ -252,22 +346,27 @@ export class PrestamosComponent implements OnInit {
 
     if (this.esEquipoInvalido()) {
       this.errorModalEntrega = 'El equipo seleccionado no está disponible para préstamo (Reglas RN-02 y RN-03).';
+      this.cdr.detectChanges();
       return;
     }
     if (!this.usuarioSeleccionadoId || !this.entregaForm.usuarioResponsable?.trim()) {
       this.errorModalEntrega = 'Por favor selecciona un usuario responsable de la lista.';
+      this.cdr.detectChanges();
       return;
     }
     if (!this.fechaEntregaDate || !this.horaEntregaTime) {
       this.errorModalEntrega = 'Por favor especifica la fecha y hora de entrega del equipo.';
+      this.cdr.detectChanges();
       return;
     }
     if (!this.fechaLimiteDate || !this.horaLimiteTime) {
       this.errorModalEntrega = 'Por favor especifica la fecha y hora límite de devolución.';
+      this.cdr.detectChanges();
       return;
     }
     if (this.esHorarioInvalido) {
       this.errorModalEntrega = 'La hora límite de devolución debe ser posterior a la hora de entrega.';
+      this.cdr.detectChanges();
       return;
     }
 
@@ -282,29 +381,33 @@ export class PrestamosComponent implements OnInit {
     this.guardandoEntrega = true;
     this.entregaForm.recursoId = Number(this.entregaForm.recursoId);
 
-    this.prestamoService.registrarEntrega(this.entregaForm).subscribe({
-      next: (res) => {
+    const idNum = Number(this.usuarioSeleccionadoId);
+    this.entregaForm.idUsuario = !isNaN(idNum) && idNum > 0 ? idNum : this.usuarioSeleccionadoId;
+    this.entregaForm.usuarioId = !isNaN(idNum) && idNum > 0 ? idNum : undefined;
+    this.cdr.detectChanges();
+
+    this.prestamoService.registrarEntrega(this.entregaForm).pipe(
+      finalize(() => {
         this.guardandoEntrega = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: (res) => {
+        // Cierre inmediato del modal y forzado de detección de cambios en la vista
         this.cerrarModalEntrega();
-        this.mostrarMensajeExito(`¡Préstamo #${res.idPrestamo} registrado exitosamente! El equipo pasó a estado "Prestado".`);
         this.cargarPrestamos();
         this.cargarEquipos();
+        const prestamoId = res?.idPrestamo || res?.id || '';
+        const mensaje = prestamoId
+          ? `¡Préstamo #${prestamoId} registrado exitosamente! El equipo pasó a estado "Prestado".`
+          : '¡Préstamo registrado exitosamente! El equipo pasó a estado "Prestado".';
+        this.mostrarMensajeExito(mensaje);
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.guardandoEntrega = false;
-        let msg = 'Error al registrar entrega.';
-        if (err.error) {
-          if (typeof err.error === 'string') {
-            msg = err.error;
-          } else if (err.error.message && typeof err.error.message === 'string') {
-            msg = err.error.message;
-          } else if (err.error.error && typeof err.error.error === 'string') {
-            msg = err.error.error;
-          }
-        } else if (err.message) {
-          msg = err.message;
-        }
-        this.errorModalEntrega = msg;
+        this.errorModalEntrega = err?.error?.message || err?.error?.error || err?.message || 'Error al registrar entrega';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -324,11 +427,14 @@ export class PrestamosComponent implements OnInit {
       estadoFinal: 'Operativo',
       observaciones: ''
     };
+    this.cdr.detectChanges();
   }
 
   cerrarModalDevolucion(): void {
     this.prestamoParaDevolucion = null;
+    this.guardandoDevolucion = false;
     this.errorModalDevolucion = null;
+    this.cdr.detectChanges();
   }
 
   registrarDevolucion(): void {
@@ -340,40 +446,42 @@ export class PrestamosComponent implements OnInit {
     this.devolucionForm.fechaDevolucion = `${this.fechaDevolucionDate}T${hora}:00`;
 
     this.guardandoDevolucion = true;
+    this.cdr.detectChanges();
+
     this.prestamoService
       .registrarDevolucion(this.prestamoParaDevolucion.idPrestamo, this.devolucionForm)
+      .pipe(
+        finalize(() => {
+          this.guardandoDevolucion = false;
+          this.cdr.detectChanges();
+        })
+      )
       .subscribe({
         next: (res) => {
-          this.guardandoDevolucion = false;
-          const puntualidad = res.puntualidad || 'Puntual';
           this.cerrarModalDevolucion();
+          const puntualidad = res?.puntualidad || 'Puntual';
+          this.cargarPrestamos();
+          this.cargarEquipos();
           this.mostrarMensajeExito(
             `¡Devolución registrada! El equipo quedó "Disponible". Control de puntualidad: ${puntualidad}.`
           );
-          this.cargarPrestamos();
-          this.cargarEquipos();
+          this.cdr.detectChanges();
         },
         error: (err) => {
           this.guardandoDevolucion = false;
-          let msg = 'Error al registrar devolución.';
-          if (err.error) {
-            if (typeof err.error === 'string') {
-              msg = err.error;
-            } else if (err.error.message && typeof err.error.message === 'string') {
-              msg = err.error.message;
-            } else if (err.error.error && typeof err.error.error === 'string') {
-              msg = err.error.error;
-            }
-          } else if (err.message) {
-            msg = err.message;
-          }
+          let msg = err?.error?.message || err?.error?.error || err?.message || 'Error al registrar devolución.';
           this.errorModalDevolucion = msg;
+          this.cdr.detectChanges();
         }
       });
   }
 
   mostrarMensajeExito(msg: string): void {
     this.mensajeExito = msg;
-    setTimeout(() => (this.mensajeExito = null), 6000);
+    this.cdr.detectChanges();
+    setTimeout(() => {
+      this.mensajeExito = null;
+      this.cdr.detectChanges();
+    }, 6000);
   }
 }

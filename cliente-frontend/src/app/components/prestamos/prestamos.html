@@ -57,8 +57,35 @@
     </div>
   }
 
-  <!-- Tabla de Préstamos -->
-  @if (!cargando) {
+  <!-- Estado Vacío amigable cuando no hay préstamos -->
+  @if (!cargando && prestamos.length === 0) {
+    <div class="card empty-state">
+      <h3 class="empty-state__title">
+        @if (tabSeleccionada === 'tardios') {
+          No hay préstamos tardíos o vencidos
+        } @else if (tabSeleccionada === 'todos') {
+          Historial de préstamos vacío
+        } @else {
+          No hay préstamos activos en este momento
+        }
+      </h3>
+      <p class="empty-state__sub">
+        @if (tabSeleccionada === 'tardios') {
+          No se encontraron préstamos tardíos o vencidos pendientes de devolución.
+        } @else if (tabSeleccionada === 'todos') {
+          No se encontraron registros en el historial de préstamos.
+        } @else {
+          Actualmente no hay equipos en préstamo. Puedes registrar una nueva entrega a continuación.
+        }
+      </p>
+      <button class="btn btn--primary" type="button" (click)="abrirModalEntrega()">
+        + Registrar Entrega
+      </button>
+    </div>
+  }
+
+  <!-- Tabla de Préstamos cuando sí existen registros -->
+  @if (!cargando && prestamos.length > 0) {
     <div class="card">
       <table class="tabla">
         <thead>
@@ -116,14 +143,6 @@
               </td>
             </tr>
           }
-
-          @if (prestamos.length === 0) {
-            <tr>
-              <td colspan="8" class="empty">
-                No se encontraron préstamos en este filtro.
-              </td>
-            </tr>
-          }
         </tbody>
       </table>
     </div>
@@ -135,8 +154,8 @@
 <!-- MODAL: REGISTRAR ENTREGA (RN-02 y RN-03)       -->
 <!-- ============================================== -->
 @if (mostrarModalEntrega) {
-  <div class="modal-backdrop">
-    <div class="form-card">
+  <div class="modal-backdrop" (click)="cerrarModalEntrega()">
+    <div class="form-card" (click)="$event.stopPropagation()">
       <div class="form-card__head">
         <h2 class="form-card__title">Registrar Entrega de Equipo</h2>
         <p class="form-card__sub">Asegura la entrega validando que el equipo esté disponible.</p>
@@ -145,7 +164,7 @@
       <!-- Banner de error del modal de entrega -->
       @if (errorModalEntrega) {
         <div class="alerta alerta--error">
-          <span class="alerta__icono">⚠️</span>
+          <span class="alerta__icono">⚠</span>
           <span>{{ errorModalEntrega }}</span>
         </div>
       }
@@ -254,7 +273,7 @@
       <!-- Advertencia de incoherencia cronológica en tiempo real -->
       @if (esHorarioInvalido) {
         <div class="alerta alerta--error" style="margin-top: -6px; margin-bottom: 4px;">
-          <span class="alerta__icono">⚠️</span>
+          <span class="alerta__icono">⚠</span>
           <span>La hora límite de devolución debe ser posterior a la hora de entrega.</span>
         </div>
       }
@@ -314,8 +333,8 @@
 <!-- MODAL: REGISTRAR DEVOLUCIÓN                    -->
 <!-- ============================================== -->
 @if (prestamoParaDevolucion) {
-  <div class="modal-backdrop">
-    <div class="form-card">
+  <div class="modal-backdrop" (click)="cerrarModalDevolucion()">
+    <div class="form-card" (click)="$event.stopPropagation()">
       <div class="form-card__head">
         <h2 class="form-card__title">Registrar Devolución de Equipo</h2>
         <p class="form-card__sub">
@@ -326,7 +345,7 @@
       <!-- Banner de error del modal de devolución -->
       @if (errorModalDevolucion) {
         <div class="alerta alerta--error">
-          <span class="alerta__icono">⚠️</span>
+          <span class="alerta__icono">⚠</span>
           <span>{{ errorModalDevolucion }}</span>
         </div>
       }

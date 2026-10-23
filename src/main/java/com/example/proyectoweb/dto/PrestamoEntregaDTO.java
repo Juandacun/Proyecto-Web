@@ -8,16 +8,12 @@ public class PrestamoEntregaDTO {
 
     private Long recursoId;
     private String usuarioResponsable;
+    private Long usuarioId;
     private String idUsuario;
     private String documento;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate fechaEntrega;
-
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate fechaLimite;
-
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate fechaDevolucionEstimada;
 
     private String estadoInicial;
@@ -25,17 +21,37 @@ public class PrestamoEntregaDTO {
     private String observaciones;
     private String accesorios;
 
+    @com.fasterxml.jackson.annotation.JsonCreator
     public PrestamoEntregaDTO() {
     }
 
-    public PrestamoEntregaDTO(Long recursoId, String usuarioResponsable, LocalDate fechaLimite,
+    public PrestamoEntregaDTO(Long recursoId, String usuarioResponsable, Object fechaLimite,
                               String estadoInicial, String observaciones, String accesorios) {
         this.recursoId = recursoId;
         this.usuarioResponsable = usuarioResponsable;
-        this.fechaLimite = fechaLimite;
+        this.fechaLimite = parseDateFlexible(fechaLimite);
         this.estadoInicial = estadoInicial;
         this.observaciones = observaciones;
         this.accesorios = accesorios;
+    }
+
+    public static LocalDate parseDateFlexible(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof LocalDate ld) {
+            return ld;
+        }
+        String str = value.toString().trim();
+        if (str.isEmpty()) {
+            return null;
+        }
+        if (str.contains("T")) {
+            str = str.substring(0, str.indexOf("T"));
+        } else if (str.contains(" ")) {
+            str = str.substring(0, str.indexOf(" "));
+        }
+        return LocalDate.parse(str);
     }
 
     public Long getRecursoId() {
@@ -53,19 +69,53 @@ public class PrestamoEntregaDTO {
         if (documento != null && !documento.isBlank()) {
             return documento;
         }
-        return idUsuario;
+        if (idUsuario != null && !idUsuario.isBlank()) {
+            return idUsuario;
+        }
+        return usuarioId != null ? String.valueOf(usuarioId) : null;
     }
 
     public void setUsuarioResponsable(String usuarioResponsable) {
         this.usuarioResponsable = usuarioResponsable;
     }
 
-    public String getIdUsuario() {
-        return idUsuario;
+    public Long getUsuarioId() {
+        if (usuarioId != null) {
+            return usuarioId;
+        }
+        if (idUsuario != null && !idUsuario.isBlank()) {
+            try {
+                return Long.valueOf(idUsuario.trim());
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return null;
     }
 
-    public void setIdUsuario(String idUsuario) {
-        this.idUsuario = idUsuario;
+    public void setUsuarioId(Long usuarioId) {
+        this.usuarioId = usuarioId;
+        if (this.idUsuario == null && usuarioId != null) {
+            this.idUsuario = String.valueOf(usuarioId);
+        }
+    }
+
+    public String getIdUsuario() {
+        if (idUsuario != null && !idUsuario.isBlank()) {
+            return idUsuario;
+        }
+        return usuarioId != null ? String.valueOf(usuarioId) : null;
+    }
+
+    public void setIdUsuario(Object idUsuario) {
+        if (idUsuario == null) {
+            this.idUsuario = null;
+        } else {
+            this.idUsuario = idUsuario.toString().trim();
+            try {
+                this.usuarioId = Long.valueOf(this.idUsuario);
+            } catch (NumberFormatException ignored) {
+            }
+        }
     }
 
     public String getDocumento() {
@@ -76,35 +126,20 @@ public class PrestamoEntregaDTO {
         this.documento = documento;
     }
 
+    @JsonFormat(pattern = "yyyy-MM-dd")
     public LocalDate getFechaEntrega() {
         return fechaEntrega;
     }
 
-    public void setFechaEntrega(LocalDate fechaEntrega) {
-        this.fechaEntrega = fechaEntrega;
+    public void setFechaEntrega(Object value) {
+        this.fechaEntrega = parseDateFlexible(value);
     }
 
-    @com.fasterxml.jackson.annotation.JsonSetter("fechaEntrega")
     public void setFechaEntregaFromString(Object value) {
-        if (value == null) {
-            this.fechaEntrega = null;
-            return;
-        }
-        if (value instanceof LocalDate ld) {
-            this.fechaEntrega = ld;
-            return;
-        }
-        String str = value.toString().trim();
-        if (str.isEmpty()) {
-            this.fechaEntrega = null;
-            return;
-        }
-        if (str.contains("T")) {
-            str = str.substring(0, str.indexOf("T"));
-        }
-        this.fechaEntrega = LocalDate.parse(str);
+        setFechaEntrega(value);
     }
 
+    @JsonFormat(pattern = "yyyy-MM-dd")
     public LocalDate getFechaLimite() {
         if (fechaLimite != null) {
             return fechaLimite;
@@ -112,37 +147,21 @@ public class PrestamoEntregaDTO {
         return fechaDevolucionEstimada;
     }
 
-    public void setFechaLimite(LocalDate fechaLimite) {
-        this.fechaLimite = fechaLimite;
+    public void setFechaLimite(Object value) {
+        this.fechaLimite = parseDateFlexible(value);
     }
 
-    @com.fasterxml.jackson.annotation.JsonSetter("fechaLimite")
     public void setFechaLimiteFromString(Object value) {
-        if (value == null) {
-            this.fechaLimite = null;
-            return;
-        }
-        if (value instanceof LocalDate ld) {
-            this.fechaLimite = ld;
-            return;
-        }
-        String str = value.toString().trim();
-        if (str.isEmpty()) {
-            this.fechaLimite = null;
-            return;
-        }
-        if (str.contains("T")) {
-            str = str.substring(0, str.indexOf("T"));
-        }
-        this.fechaLimite = LocalDate.parse(str);
+        setFechaLimite(value);
     }
 
+    @JsonFormat(pattern = "yyyy-MM-dd")
     public LocalDate getFechaDevolucionEstimada() {
         return getFechaLimite();
     }
 
-    public void setFechaDevolucionEstimada(LocalDate fechaDevolucionEstimada) {
-        this.fechaDevolucionEstimada = fechaDevolucionEstimada;
+    public void setFechaDevolucionEstimada(Object value) {
+        this.fechaDevolucionEstimada = parseDateFlexible(value);
     }
 
     public String getEstadoInicial() {

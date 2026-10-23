@@ -6,49 +6,32 @@ import java.time.LocalDate;
 
 public class PrestamoDevolucionDTO {
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate fechaDevolucion;
-
     private String estadoFinal;
     private String estadoEquipo;
     private String observaciones;
 
+    @com.fasterxml.jackson.annotation.JsonCreator
     public PrestamoDevolucionDTO() {
     }
 
-    public PrestamoDevolucionDTO(LocalDate fechaDevolucion, String estadoFinal, String observaciones) {
-        this.fechaDevolucion = fechaDevolucion;
+    public PrestamoDevolucionDTO(Object fechaDevolucion, String estadoFinal, String observaciones) {
+        this.fechaDevolucion = PrestamoEntregaDTO.parseDateFlexible(fechaDevolucion);
         this.estadoFinal = estadoFinal;
         this.observaciones = observaciones;
     }
 
+    @JsonFormat(pattern = "yyyy-MM-dd")
     public LocalDate getFechaDevolucion() {
         return fechaDevolucion != null ? fechaDevolucion : LocalDate.now();
     }
 
-    public void setFechaDevolucion(LocalDate fechaDevolucion) {
-        this.fechaDevolucion = fechaDevolucion;
+    public void setFechaDevolucion(Object value) {
+        this.fechaDevolucion = PrestamoEntregaDTO.parseDateFlexible(value);
     }
 
-    @com.fasterxml.jackson.annotation.JsonSetter("fechaDevolucion")
     public void setFechaDevolucionFromString(Object value) {
-        if (value == null) {
-            this.fechaDevolucion = null;
-            return;
-        }
-        if (value instanceof LocalDate ld) {
-            this.fechaDevolucion = ld;
-            return;
-        }
-        String str = value.toString().trim();
-        if (str.isEmpty()) {
-            this.fechaDevolucion = null;
-            return;
-        }
-        if (str.contains("T")) {
-            str = str.substring(0, str.indexOf("T"));
-        }
-        this.fechaDevolucion = LocalDate.parse(str);
+        setFechaDevolucion(value);
     }
 
     public String getEstadoFinal() {

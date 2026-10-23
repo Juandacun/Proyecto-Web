@@ -152,10 +152,10 @@ public class Prestamo {
         if (puntualidad != null && !puntualidad.isBlank()) {
             return puntualidad;
         }
-        if ("Devuelto".equalsIgnoreCase(this.estado) && fechaDevolucion != null) {
+        if ("Devuelto".equalsIgnoreCase(this.estado) && fechaDevolucion != null && fechaDevolucionEstimada != null) {
             return fechaDevolucion.isAfter(fechaDevolucionEstimada) ? "Tardía" : "Puntual";
         }
-        if (!"Devuelto".equalsIgnoreCase(this.estado)) {
+        if (!"Devuelto".equalsIgnoreCase(this.estado) && fechaDevolucionEstimada != null) {
             return LocalDate.now().isAfter(fechaDevolucionEstimada) ? "Vencido" : "En curso";
         }
         return "Pendiente";
@@ -167,10 +167,10 @@ public class Prestamo {
 
     public boolean esTardio() {
         if ("Devuelto".equalsIgnoreCase(this.estado)) {
-            return (fechaDevolucion != null && fechaDevolucion.isAfter(fechaDevolucionEstimada))
+            return (fechaDevolucion != null && fechaDevolucionEstimada != null && fechaDevolucion.isAfter(fechaDevolucionEstimada))
                     || "Tardía".equalsIgnoreCase(this.puntualidad);
         }
-        return LocalDate.now().isAfter(fechaDevolucionEstimada);
+        return fechaDevolucionEstimada != null && LocalDate.now().isAfter(fechaDevolucionEstimada);
     }
 
     public String getEstadoColor() {

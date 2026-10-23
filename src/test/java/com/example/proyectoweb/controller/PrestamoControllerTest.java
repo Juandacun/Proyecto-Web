@@ -233,4 +233,51 @@ class PrestamoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", isA(java.util.List.class)));
     }
+
+    @Test
+    void testDeserializacionDirectaJackson() throws Exception {
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        String json = """
+                {
+                    "recursoId": 6,
+                    "usuarioResponsable": "Juan Pérez",
+                    "fechaEntrega": "2026-10-22T15:55:00",
+                    "fechaLimite": "2026-10-23T18:00:00"
+                }
+                """;
+        PrestamoEntregaDTO dto = mapper.readValue(json, PrestamoEntregaDTO.class);
+        org.junit.jupiter.api.Assertions.assertEquals(java.time.LocalDate.of(2026, 10, 22), dto.getFechaEntrega());
+        org.junit.jupiter.api.Assertions.assertEquals(java.time.LocalDate.of(2026, 10, 23), dto.getFechaLimite());
+    }
+
+    @Test
+    void testRegistrarEntregaConPayloadIsoCompletoEIdUsuario() throws Exception {
+        Recurso equipo = crearEquipoPrueba("Tablet iPad Pro", "Disponible");
+
+        String jsonPayload = String.format("""
+                {
+                    "recursoId": %d,
+                    "usuarioResponsable": "Juan Pérez - Estudiante (EST-202410)",
+                    "idUsuario": 1,
+                    "usuarioId": 1,
+                    "fechaEntrega": "2026-10-22T15:55:00",
+                    "fechaLimite": "2026-10-23T18:00:00",
+                    "estadoInicial": "Operativo",
+                    "observaciones": "",
+                    "accesorios": "Cables, cargador, estuche"
+                }
+                """, equipo.getIdRecurso());
+
+        mockMvc.perform(post("/api/prestamos/entrega")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonPayload))
+                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.idPrestamo", notNullValue()))
+                .andExpect(jsonPath("$.usuarioResponsable", is("Juan Pérez - Estudiante (EST-202410)")))
+                .andExpect(jsonPath("$.fechaEntrega", is("2026-10-22")))
+                .andExpect(jsonPath("$.fechaDevolucionEstimada", is("2026-10-23")))
+                .andExpect(jsonPath("$.estado", is("Prestado")));
+    }
 }
