@@ -104,7 +104,7 @@ SELECT 'Cancha de fútbol', 'Espacio deportivo', 'Cancha de césped sintético',
 WHERE NOT EXISTS (SELECT 1 FROM recursos WHERE nombre = 'Cancha de fútbol');
 
 INSERT INTO recursos (nombre, tipo, descripcion, caracteristicas, estado, clase, id_categoria, id_ubicacion)
-SELECT 'Micrófonos inalámbricos SHURE', 'Equipo audiovisual', 'Set de micrófonos para auditorio', 'Set de 4 unidades', 'En préstamo', 'EQUIPO',
+SELECT 'Micrófonos inalámbricos SHURE', 'Equipo audiovisual', 'Set de micrófonos para auditorio', 'Set de 4 unidades', 'Prestado', 'EQUIPO',
        (SELECT id_categoria FROM categorias WHERE nombre = 'Equipos audiovisuales'),
        (SELECT id_ubicacion FROM ubicaciones WHERE nombre = 'Auditorio Jorge Hoyos Vásquez')
 WHERE NOT EXISTS (SELECT 1 FROM recursos WHERE nombre = 'Micrófonos inalámbricos SHURE');
@@ -146,3 +146,7 @@ SELECT r.id_recurso, 'Daño físico', 'Media', 'Silla del puesto 4 dañada', TIM
 FROM recursos r
 WHERE r.nombre = 'Salón 201'
   AND NOT EXISTS (SELECT 1 FROM incidentes WHERE descripcion = 'Silla del puesto 4 dañada');
+-- ---------- Normalización de estados ----------
+-- Bases creadas con versiones anteriores guardaban 'En préstamo';
+-- el estado usado por los préstamos es 'Prestado'.
+UPDATE recursos SET estado = 'Prestado' WHERE estado = 'En préstamo';

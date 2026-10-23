@@ -35,7 +35,7 @@ public class RecursoController {
     public ResponseEntity<List<Recurso>> listar(
             @Parameter(description = "Filtrar por clase: EQUIPO o ESPACIO")
             @RequestParam(required = false) Recurso.Clase clase,
-            @Parameter(description = "Filtrar por estado textual: Disponible, Reservado, En préstamo, Bloqueado, etc.")
+            @Parameter(description = "Filtrar por estado textual: Disponible, Reservado, Prestado, Bloqueado, etc.")
             @RequestParam(required = false) String estado,
             @Parameter(description = "Filtrar únicamente recursos en estado Disponible")
             @RequestParam(required = false) Boolean disponible) {

@@ -28,7 +28,7 @@
                 <option value="">Todos</option>
                 <option value="Disponible">Disponible</option>
                 <option value="Reservado">Reservado</option>
-                <option value="En préstamo">En préstamo</option>
+                <option value="Prestado">Prestado</option>
                 <option value="Bloqueado">Bloqueado</option>
             </select>
         </div>
@@ -52,7 +52,7 @@
                     <span class="tag" [ngClass]="{
         'tag--verde': r.estado === 'Disponible',
         'tag--azul': r.estado === 'Reservado',
-        'tag--ambar': r.estado === 'En préstamo',
+        'tag--ambar': r.estado === 'Prestado',
         'tag--rojo': r.estado === 'Bloqueado'
       }">{{ r.estado }}</span>
                 </div>
