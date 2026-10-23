@@ -172,3 +172,18 @@ a:hover { color: #1D4ED8; }
 .franjas { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .franjas li { display: flex; justify-content: space-between; padding: 8px 12px; background: #F8FAFC; border-radius: 6px; font-size: 13px; color: #334155; }
 
+
+@media (max-width: 760px) {
+  .content { padding: 16px; gap: 16px; }
+  .page-head { flex-direction: column; align-items: stretch; }
+  .field-row { flex-direction: column; }
+  .form-actions { flex-wrap: wrap; }
+  .card { overflow-x: auto; }
+  .tabla { min-width: 640px; }
+}
+
+@media (max-width: 760px) {
+  .filtros .field, .filtros .field--buscar { flex: 1 1 100%; }
+  .grid-recursos { grid-template-columns: 1fr; }
+  .btn--sm { min-width: 0; }
+}

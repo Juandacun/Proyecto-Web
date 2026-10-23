@@ -19,3 +19,14 @@
 .role-text { font-weight: 500; font-size: 12px; line-height: 15px; color: #334155; }
 .caret { font-size: 11px; line-height: 13px; color: #64748B; }
 .avatar { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 999px; background: #2563EB; color: #fff; font-weight: 600; font-size: 12px; }
+
+/* Responsive: en teléfono el menú lateral pasa a una barra superior desplazable */
+@media (max-width: 760px) {
+  .layout { flex-direction: column; }
+  .sidebar { width: 100%; flex-direction: row; align-items: center; gap: 8px; padding: 12px 16px; overflow-x: auto; }
+  .brand-sub, .spacer { display: none; }
+  .brand { margin-right: 8px; white-space: nowrap; }
+  .nav-item { flex: none; align-self: auto; white-space: nowrap; }
+  .topbar { height: 56px; padding: 0 16px; }
+  .screen-title { font-size: 16px; }
+}
