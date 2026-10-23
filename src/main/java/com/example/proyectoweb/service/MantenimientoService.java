@@ -111,20 +111,36 @@ public class MantenimientoService {
         return guardado;
     }
 
+    private static final List<String> ESTADOS = List.of("Abierta", "En proceso", "Finalizada", "Cancelada");
+
+    // Cambiar estado de la intervención: Abierta -> En proceso -> Finalizada | Cancelada
     public Mantenimiento cambiarEstado(Long id, String nuevoEstado) {
         if (nuevoEstado == null || nuevoEstado.isBlank()) {
             throw new IllegalArgumentException("El nuevo estado es obligatorio.");
         }
-        if ("Finalizada".equalsIgnoreCase(nuevoEstado.trim())) {
-            return finalizar(id);
-        }
+        String estado = ESTADOS.stream()
+                .filter(e -> e.equalsIgnoreCase(nuevoEstado.trim()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Estado no válido. Opciones: " + String.join(", ", ESTADOS) + "."));
 
         Mantenimiento mantenimiento = buscarPorId(id);
         if (mantenimiento == null) {
             return null;
         }
-
-        mantenimiento.setEstado(nuevoEstado.trim());
+        if ("Finalizada".equalsIgnoreCase(mantenimiento.getEstado())
+                || "Cancelada".equalsIgnoreCase(mantenimiento.getEstado())) {
+            throw new IllegalStateException("La orden #" + id + " ya está " + mantenimiento.getEstado()
+                    + " y no puede cambiar de estado.");
+        }
+        if ("Finalizada".equals(estado)) {
+            return finalizar(id);
+        }
+        mantenimiento.setEstado(estado);
+        if ("Cancelada".equals(estado)) {
+            // El recurso sigue bloqueado: el gestor decide si lo habilita (RN-04)
+            mantenimiento.setFechaCierre(LocalDateTime.now());
+        }
         return repository.save(mantenimiento);
     }
 }

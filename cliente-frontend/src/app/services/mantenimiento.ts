@@ -38,4 +38,8 @@ export class MantenimientoService {
   finalizar(id: number): Observable<any> {
     return this.http.patch<any>(`${this.apiUrl}/${id}/finalizar`, {});
   }
+
+  cambiarEstado(id: number, estado: 'En proceso' | 'Cancelada' | 'Finalizada'): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/${id}/estado`, { estado });
+  }
 }

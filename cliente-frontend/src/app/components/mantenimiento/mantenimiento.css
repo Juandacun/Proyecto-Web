@@ -19,6 +19,10 @@
 .btn--danger:disabled { background: #FCA5A5; cursor: not-allowed; }
 .btn--ghost { background: #fff; border: 1px solid #E2E8F0; color: #0F172A; }
 .btn--ghost:hover { background: #F8FAFC; color: #0F172A; }
+.btn--xs { padding: 6px 12px; font-size: 12px; line-height: 15px; }
+.btn--texto-rojo { color: #DC2626; }
+.btn--texto-rojo:hover { color: #B91C1C; }
+.acciones-orden { display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 
 .card { background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; }
 .card--pad { padding: 24px; display: flex; flex-direction: column; gap: 12px; }

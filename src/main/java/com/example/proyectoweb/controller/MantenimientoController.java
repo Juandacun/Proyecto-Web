@@ -90,4 +90,29 @@ public class MantenimientoController {
         }
         return ResponseEntity.ok(finalizado);
     }
+
+    // PATCH /api/mantenimientos/{id}/estado - Cambiar estado de la intervención
+    @Operation(summary = "Cambiar estado de mantenimiento", description = "Cambia el estado de una orden abierta o en proceso a 'En proceso', 'Finalizada' o 'Cancelada'. 'Finalizada' aplica RN-05; 'Cancelada' cierra la orden y deja el recurso bloqueado hasta que el gestor lo habilite.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Estado actualizado"),
+            @ApiResponse(responseCode = "400", description = "Estado faltante o no válido"),
+            @ApiResponse(responseCode = "404", description = "Orden no encontrada"),
+            @ApiResponse(responseCode = "409", description = "La orden ya está finalizada o cancelada")
+    })
+    @PatchMapping("/{id}/estado")
+    public ResponseEntity<?> cambiarEstado(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String nuevoEstado = body != null ? body.get("estado") : null;
+        try {
+            Mantenimiento actualizado = mantenimientoService.cambiarEstado(id, nuevoEstado);
+            if (actualizado == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "La orden de mantenimiento con ID " + id + " no existe."));
+            }
+            return ResponseEntity.ok(actualizado);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

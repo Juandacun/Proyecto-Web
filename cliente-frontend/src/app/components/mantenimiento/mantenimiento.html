@@ -142,7 +142,7 @@
           <th>Fecha Apertura</th>
           <th>Estado</th>
           <th>Responsable</th>
-          <th class="ta-right">Acción RN-05</th>
+          <th class="ta-right">Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -174,17 +174,34 @@
             </td>
             <td>{{ m.idUsuarioResponsable || 'Técnico de Campus' }}</td>
             <td class="ta-right">
-              @if (m.estado !== 'Finalizada') {
-                <button
-                  class="btn btn--primary"
-                  type="button"
-                  style="font-size: 12px; padding: 6px 12px;"
-                  (click)="finalizarMantenimiento(m)"
-                  title="Finalizar intervención y liberar recurso a Disponible (RN-05)">
-                  Finalizar Mantenimiento
-                </button>
+              @if (!estaCerrada(m)) {
+                <div class="acciones-orden">
+                  @if (m.estado === 'Abierta') {
+                    <button
+                      class="btn btn--ghost btn--xs"
+                      type="button"
+                      (click)="iniciarMantenimiento(m)"
+                      title="Marcar la intervención como En proceso">
+                      Iniciar
+                    </button>
+                  }
+                  <button
+                    class="btn btn--primary btn--xs"
+                    type="button"
+                    (click)="finalizarMantenimiento(m)"
+                    title="Finalizar intervención y liberar recurso a Disponible (RN-05)">
+                    Finalizar
+                  </button>
+                  <button
+                    class="btn btn--ghost btn--xs btn--texto-rojo"
+                    type="button"
+                    (click)="cancelarMantenimiento(m)"
+                    title="Cancelar la orden; el recurso sigue bloqueado">
+                    Cancelar
+                  </button>
+                </div>
               } @else {
-                <span class="tag tag--verde">Finalizada</span>
+                <span class="tag" [ngClass]="m.estado === 'Finalizada' ? 'tag--verde' : 'tag--gris'">{{ m.estado }}</span>
               }
             </td>
           </tr>

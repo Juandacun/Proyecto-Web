@@ -168,4 +168,44 @@ class IncidenteMantenimientoTest {
         Recurso recursoLiberado = recursoService.buscarPorId(recurso.getIdRecurso());
         assertEquals("Disponible", recursoLiberado.getEstado());
     }
+
+    @Test
+    void testCambiarEstadoMantenimientoAEnProcesoYCancelar() throws Exception {
+        Recurso recurso = crearRecursoPrueba("Osciloscopio digital", "Bloqueado");
+        Mantenimiento orden = mantenimientoService.crearOrden(new MantenimientoDTO(recurso.getIdRecurso(),
+                "Revisión de sondas", "tecnico.ana"));
+
+        mockMvcMantenimientos.perform(patch("/api/mantenimientos/" + orden.getIdMantenimiento() + "/estado")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"estado\":\"en proceso\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado", is("En proceso")));
+
+        mockMvcMantenimientos.perform(patch("/api/mantenimientos/" + orden.getIdMantenimiento() + "/estado")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"estado\":\"Cancelada\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado", is("Cancelada")))
+                .andExpect(jsonPath("$.fechaCierre", notNullValue()));
+
+        // Una orden cancelada no vuelve a cambiar de estado y el recurso sigue bloqueado
+        mockMvcMantenimientos.perform(patch("/api/mantenimientos/" + orden.getIdMantenimiento() + "/estado")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"estado\":\"Finalizada\"}"))
+                .andExpect(status().isConflict());
+        assertEquals("Bloqueado", recursoService.buscarPorId(recurso.getIdRecurso()).getEstado());
+    }
+
+    @Test
+    void testCambiarEstadoMantenimientoInvalidoRetorna400() throws Exception {
+        Recurso recurso = crearRecursoPrueba("Fuente de poder", "Bloqueado");
+        Mantenimiento orden = mantenimientoService.crearOrden(new MantenimientoDTO(recurso.getIdRecurso(),
+                "Cambio de fusible", "tecnico.ana"));
+
+        mockMvcMantenimientos.perform(patch("/api/mantenimientos/" + orden.getIdMantenimiento() + "/estado")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"estado\":\"Pausada\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", containsString("Estado no válido")));
+    }
 }

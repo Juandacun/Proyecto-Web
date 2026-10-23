@@ -159,6 +159,38 @@ export class MantenimientoComponent implements OnInit {
     });
   }
 
+  // --- Cambiar estado de la intervención (Abierta -> En proceso / Cancelada) ---
+  iniciarMantenimiento(mantenimiento: any): void {
+    this.mantenimientoService.cambiarEstado(mantenimiento.idMantenimiento, 'En proceso').subscribe({
+      next: () => {
+        this.mostrarMensajeExito(`Orden #${mantenimiento.idMantenimiento} en proceso.`);
+        this.cargarDatos();
+      },
+      error: (err) => {
+        this.mensajeError = err.error?.error || 'No se pudo cambiar el estado de la orden.';
+      }
+    });
+  }
+
+  cancelarMantenimiento(mantenimiento: any): void {
+    if (!confirm(`¿Deseas cancelar la orden de mantenimiento #${mantenimiento.idMantenimiento}? El recurso seguirá bloqueado hasta que se habilite.`)) {
+      return;
+    }
+    this.mantenimientoService.cambiarEstado(mantenimiento.idMantenimiento, 'Cancelada').subscribe({
+      next: () => {
+        this.mostrarMensajeExito(`Orden #${mantenimiento.idMantenimiento} cancelada. El recurso permanece bloqueado.`);
+        this.cargarDatos();
+      },
+      error: (err) => {
+        this.mensajeError = err.error?.error || 'No se pudo cancelar la orden.';
+      }
+    });
+  }
+
+  estaCerrada(mantenimiento: any): boolean {
+    return mantenimiento.estado === 'Finalizada' || mantenimiento.estado === 'Cancelada';
+  }
+
   // --- Crear Orden de Mantenimiento ---
   abrirModalNuevaOrden(): void {
     this.mostrarModalNuevaOrden = true;
