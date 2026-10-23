@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RecursoService } from '../../services/recurso';
+import { CategoriaService, Categoria } from '../../services/categoria';
+import { UbicacionService, Ubicacion } from '../../services/ubicacion';
 
 @Component({
   selector: 'app-catalogo',
@@ -12,13 +14,32 @@ import { RecursoService } from '../../services/recurso';
 })
 export class CatalogoComponent implements OnInit {
   recursos: any[] = [];
+  categorias: Categoria[] = [];
+  ubicaciones: Ubicacion[] = [];
+  tipos: string[] = [];
+
   filtroTexto: string = '';
   claseSeleccionada: string = '';
   estadoSeleccionado: string = '';
+  categoriaSeleccionada: number | null = null;
+  ubicacionSeleccionada: number | null = null;
+  tipoSeleccionado: string = '';
 
-  constructor(private recursoService: RecursoService) {}
+  constructor(
+    private recursoService: RecursoService,
+    private categoriaService: CategoriaService,
+    private ubicacionService: UbicacionService
+  ) {}
 
   ngOnInit(): void {
+    this.categoriaService.listar().subscribe({ next: (data) => (this.categorias = data) });
+    this.ubicacionService.listar().subscribe({ next: (data) => (this.ubicaciones = data) });
+    // Los tipos se toman del catálogo completo para que no desaparezcan al filtrar
+    this.recursoService.listar().subscribe({
+      next: (data) => {
+        this.tipos = [...new Set(data.map((r) => r.tipo).filter((t) => !!t))].sort();
+      }
+    });
     this.cargarRecursos();
   }
 
@@ -29,6 +50,15 @@ export class CatalogoComponent implements OnInit {
     }
     if (this.estadoSeleccionado) {
       filtros.estado = this.estadoSeleccionado;
+    }
+    if (this.categoriaSeleccionada) {
+      filtros.categoriaId = Number(this.categoriaSeleccionada);
+    }
+    if (this.ubicacionSeleccionada) {
+      filtros.ubicacionId = Number(this.ubicacionSeleccionada);
+    }
+    if (this.tipoSeleccionado) {
+      filtros.tipo = this.tipoSeleccionado;
     }
 
     this.recursoService.obtenerRecursos(filtros).subscribe({
@@ -45,6 +75,9 @@ export class CatalogoComponent implements OnInit {
     this.filtroTexto = '';
     this.claseSeleccionada = '';
     this.estadoSeleccionado = '';
+    this.categoriaSeleccionada = null;
+    this.ubicacionSeleccionada = null;
+    this.tipoSeleccionado = '';
     this.cargarRecursos();
   }
 
@@ -52,14 +85,20 @@ export class CatalogoComponent implements OnInit {
     if (!this.recursos || this.recursos.length === 0) return [];
     return this.recursos.filter(recurso => {
       const texto = this.filtroTexto.toLowerCase();
-      const coincideTexto = !this.filtroTexto || 
+      const coincideTexto = !this.filtroTexto ||
         (recurso.nombre && recurso.nombre.toLowerCase().includes(texto)) ||
         (recurso.tipo && recurso.tipo.toLowerCase().includes(texto)) ||
         (recurso.categoria?.nombre && recurso.categoria.nombre.toLowerCase().includes(texto)) ||
         (recurso.ubicacion?.nombre && recurso.ubicacion.nombre.toLowerCase().includes(texto));
       const coincideClase = !this.claseSeleccionada || recurso.clase === this.claseSeleccionada.toUpperCase();
       const coincideEstado = !this.estadoSeleccionado || recurso.estado === this.estadoSeleccionado;
-      return coincideTexto && coincideClase && coincideEstado;
+      const coincideCategoria = !this.categoriaSeleccionada
+        || recurso.categoria?.idCategoria === Number(this.categoriaSeleccionada);
+      const coincideUbicacion = !this.ubicacionSeleccionada
+        || recurso.ubicacion?.idUbicacion === Number(this.ubicacionSeleccionada);
+      const coincideTipo = !this.tipoSeleccionado || recurso.tipo === this.tipoSeleccionado;
+      return coincideTexto && coincideClase && coincideEstado
+        && coincideCategoria && coincideUbicacion && coincideTipo;
     });
   }
 

@@ -32,6 +32,27 @@
                 <option value="Bloqueado">Bloqueado</option>
             </select>
         </div>
+        <div class="field">
+            <label for="categoria">Categoría</label>
+            <select id="categoria" [(ngModel)]="categoriaSeleccionada">
+                <option [ngValue]="null">Todas</option>
+                <option *ngFor="let c of categorias" [ngValue]="c.idCategoria">{{ c.nombre }}</option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="ubicacion">Ubicación</label>
+            <select id="ubicacion" [(ngModel)]="ubicacionSeleccionada">
+                <option [ngValue]="null">Todas</option>
+                <option *ngFor="let u of ubicaciones" [ngValue]="u.idUbicacion">{{ u.nombre }}</option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="tipo">Tipo</label>
+            <select id="tipo" [(ngModel)]="tipoSeleccionado">
+                <option value="">Todos</option>
+                <option *ngFor="let t of tipos" [value]="t">{{ t }}</option>
+            </select>
+        </div>
         <div class="field field--acciones" style="display: flex; gap: 8px; align-items: flex-end;">
             <button class="btn btn--primary" type="button" (click)="aplicarFiltros()">Filtrar</button>
             <button class="btn btn--ghost" type="button" (click)="limpiarFiltros()">Limpiar</button>

@@ -10,12 +10,16 @@ export class RecursoService {
     private apiUrl = 'http://localhost:8080/api/recursos'; 
     constructor(private http: HttpClient) {}
     
-    obtenerRecursos(filtros?: {clase?: string, estado?: string, disponible?: boolean}): Observable<any[]> {
+    obtenerRecursos(filtros?: {clase?: string, estado?: string, disponible?: boolean,
+                               categoriaId?: number, ubicacionId?: number, tipo?: string}): Observable<any[]> {
         let params = new HttpParams();
         if (filtros) {
             if (filtros.clase) params = params.set('clase', filtros.clase);
             if (filtros.estado) params = params.set('estado', filtros.estado);
             if (filtros.disponible !== undefined) params = params.set('disponible', filtros.disponible);
+            if (filtros.categoriaId) params = params.set('categoriaId', filtros.categoriaId);
+            if (filtros.ubicacionId) params = params.set('ubicacionId', filtros.ubicacionId);
+            if (filtros.tipo) params = params.set('tipo', filtros.tipo);
         }
         return this.http.get<any[]>(this.apiUrl, { params });
     }

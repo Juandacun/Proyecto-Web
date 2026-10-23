@@ -78,6 +78,25 @@ public class RecursoService {
         return repository.findByClaseAndEstadoIgnoreCase(Recurso.Clase.ESPACIO, "Disponible");
     }
 
+    // READ - filtros combinables del catálogo (clase, estado, disponibilidad, categoría, ubicación y tipo)
+    @Transactional(readOnly = true)
+    public List<Recurso> filtrar(Recurso.Clase clase, String estado, Boolean disponible,
+                                 Long categoriaId, Long ubicacionId, String tipo) {
+        String estadoBuscado = Boolean.TRUE.equals(disponible) ? "Disponible"
+                : (estado != null && !estado.isBlank() ? estado.trim() : null);
+        String tipoBuscado = tipo != null && !tipo.isBlank() ? tipo.trim() : null;
+
+        return repository.findAll().stream()
+                .filter(r -> clase == null || r.getClase() == clase)
+                .filter(r -> estadoBuscado == null || estadoBuscado.equalsIgnoreCase(r.getEstado()))
+                .filter(r -> categoriaId == null
+                        || (r.getCategoria() != null && categoriaId.equals(r.getCategoria().getIdCategoria())))
+                .filter(r -> ubicacionId == null
+                        || (r.getUbicacion() != null && ubicacionId.equals(r.getUbicacion().getIdUbicacion())))
+                .filter(r -> tipoBuscado == null || tipoBuscado.equalsIgnoreCase(r.getTipo()))
+                .toList();
+    }
+
     // READ - buscar uno por ID
     @Transactional(readOnly = true)
     public Recurso buscarPorId(Long id) {

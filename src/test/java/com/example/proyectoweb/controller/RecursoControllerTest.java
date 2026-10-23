@@ -177,4 +177,49 @@ class RecursoControllerTest {
         mockMvc.perform(get("/api/recursos/" + guardado.getIdRecurso()))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void testFiltrarPorCategoriaUbicacionYTipoCombinados() throws Exception {
+        Recurso r = new Recurso();
+        r.setNombre("Proyector filtro combinado");
+        r.setTipo("Proyector de prueba");
+        r.setEstado("Disponible");
+        r.setClase(Recurso.Clase.EQUIPO);
+        Categoria cat = new Categoria();
+        cat.setIdCategoria(2L);
+        r.setCategoria(cat);
+        Ubicacion ubi = new Ubicacion();
+        ubi.setIdUbicacion(3L);
+        r.setUbicacion(ubi);
+        recursoService.guardar(r);
+
+        mockMvc.perform(get("/api/recursos")
+                        .param("categoriaId", "2")
+                        .param("ubicacionId", "3")
+                        .param("tipo", "proyector de prueba")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].nombre", is("Proyector filtro combinado")));
+    }
+
+    @Test
+    void testFiltrarPorCategoriaDevuelveSoloEsaCategoria() throws Exception {
+        mockMvc.perform(get("/api/recursos")
+                        .param("categoriaId", "1")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].categoria.idCategoria", everyItem(is(1))));
+    }
+
+    @Test
+    void testFiltrarPorClaseYEstadoCombinados() throws Exception {
+        mockMvc.perform(get("/api/recursos")
+                        .param("clase", "ESPACIO")
+                        .param("estado", "Disponible")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].clase", everyItem(is("ESPACIO"))))
+                .andExpect(jsonPath("$[*].estado", everyItem(is("Disponible"))));
+    }
 }

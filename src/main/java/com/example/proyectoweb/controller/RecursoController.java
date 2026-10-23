@@ -26,8 +26,8 @@ public class RecursoController {
     @Autowired
     private RecursoService service;
 
-    // GET /api/recursos - Listar todos los recursos, con filtros opcionales
-    @Operation(summary = "Listar recursos", description = "Obtiene todos los recursos o los filtra por clase (EQUIPO/ESPACIO), estado o disponibilidad.")
+    // GET /api/recursos - Listar todos los recursos, con filtros opcionales y combinables
+    @Operation(summary = "Listar recursos", description = "Obtiene todos los recursos o los filtra por clase (EQUIPO/ESPACIO), estado, disponibilidad, categoría, ubicación o tipo. Los filtros son combinables.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de recursos obtenida exitosamente")
     })
@@ -38,26 +38,15 @@ public class RecursoController {
             @Parameter(description = "Filtrar por estado textual: Disponible, Reservado, Prestado, Bloqueado, etc.")
             @RequestParam(required = false) String estado,
             @Parameter(description = "Filtrar únicamente recursos en estado Disponible")
-            @RequestParam(required = false) Boolean disponible) {
+            @RequestParam(required = false) Boolean disponible,
+            @Parameter(description = "Filtrar por ID de categoría")
+            @RequestParam(required = false) Long categoriaId,
+            @Parameter(description = "Filtrar por ID de ubicación")
+            @RequestParam(required = false) Long ubicacionId,
+            @Parameter(description = "Filtrar por tipo de recurso (ej: Proyector, Sala de estudio)")
+            @RequestParam(required = false) String tipo) {
 
-        if (disponible != null && disponible) {
-            if (clase != null) {
-                return ResponseEntity.ok(clase == Recurso.Clase.EQUIPO
-                        ? service.listarEquiposDisponibles()
-                        : service.listarEspaciosDisponibles());
-            }
-            return ResponseEntity.ok(service.listarDisponibles());
-        }
-
-        if (clase != null) {
-            return ResponseEntity.ok(service.listarPorClase(clase));
-        }
-
-        if (estado != null && !estado.isBlank()) {
-            return ResponseEntity.ok(service.listarPorEstado(estado));
-        }
-
-        return ResponseEntity.ok(service.listar());
+        return ResponseEntity.ok(service.filtrar(clase, estado, disponible, categoriaId, ubicacionId, tipo));
     }
 
     // GET /api/recursos/equipos - Listar solo equipos

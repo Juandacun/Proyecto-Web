@@ -41,6 +41,10 @@ a:hover { color: #1D4ED8; }
 .field label { font-weight: 500; font-size: 12px; line-height: 15px; color: #475569; }
 .field select { width: 100%; padding: 10px 12px; background: #fff; border: 1px solid #CBD5E1; border-radius: 6px; font-family: inherit; font-size: 13px; line-height: 16px; color: #0F172A; }
 .field select:focus { outline: none; border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
+.filtros { flex-wrap: wrap; }
+.filtros .field { flex: 1 1 160px; }
+.filtros .field--buscar { flex: 2 1 240px; }
+.filtros .field--acciones { flex: 0 0 auto; }
 
 /* Grid de recursos */
 .grid-recursos { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; align-self: stretch; }
