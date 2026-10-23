@@ -1,0 +1,130 @@
+<section class="content">
+  <div class="page-head page-head--center">
+    <div class="intro intro--tight">
+      <h1>Tablero e indicadores</h1>
+      <p>Estado actual de los recursos, reservas por recurso y categoría, devoluciones tardías e incidentes.</p>
+    </div>
+    <button class="btn btn--ghost" type="button" [disabled]="cargando" (click)="cargar()">
+      {{ cargando ? 'Actualizando...' : 'Actualizar' }}
+    </button>
+  </div>
+
+  @if (mensajeError) {
+    <div class="alerta alerta--error">
+      <span class="alerta__icono">⚠</span>
+      <span>{{ mensajeError }}</span>
+    </div>
+  }
+
+  @if (indicadores; as ind) {
+    <!-- KPIs -->
+    <div class="kpis">
+      <div class="kpi">
+        <span class="kpi__label">Recursos registrados</span>
+        <span class="kpi__valor">{{ ind.totalRecursos }}</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi__label">Reservas confirmadas</span>
+        <span class="kpi__valor">{{ ind.reservasActivas }}</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi__label">Préstamos activos</span>
+        <span class="kpi__valor">{{ ind.prestamosActivos }}</span>
+      </div>
+      <div class="kpi kpi--alerta">
+        <span class="kpi__label">Devoluciones tardías</span>
+        <span class="kpi__valor">{{ ind.devolucionesTardias }}</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi__label">Incidentes registrados</span>
+        <span class="kpi__valor">{{ ind.incidentes }}</span>
+        <span class="kpi__sub">{{ ind.incidentesCriticos }} críticos</span>
+      </div>
+    </div>
+
+    <!-- Recursos por estado -->
+    <div class="estados">
+      @for (e of estados; track e) {
+        <button type="button" class="estado-chip" [class.is-active]="estadoSeleccionado === e"
+                (click)="estadoSeleccionado = estadoSeleccionado === e ? '' : e">
+          <span class="tag" [ngClass]="claseTag(e)">{{ e }}</span>
+          <strong>{{ conteoEstado(e) }}</strong>
+        </button>
+      }
+    </div>
+
+    <div class="tablero-row">
+      <!-- Reservas por categoría -->
+      <div class="card card--pad chart-card">
+        <h2 class="card__title">Reservas por categoría</h2>
+        <p class="card__sub">Reservas confirmadas y finalizadas (no incluye canceladas).</p>
+        <div class="barras">
+          @for (c of ind.reservasPorCategoria; track c.categoria) {
+            <div class="barra">
+              <span class="barra__label">{{ c.categoria }}</span>
+              <div class="barra__track">
+                <div class="barra__fill" [style.width.%]="porcentaje(c.reservas)"></div>
+              </div>
+              <span class="barra__valor">{{ c.reservas }}</span>
+            </div>
+          }
+          @if (ind.reservasPorCategoria.length === 0) {
+            <p class="empty">Aún no hay reservas registradas.</p>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Estado actual y reservas por recurso -->
+    <div class="card">
+      <div class="card__head card__head--row">
+        <div>
+          <h2 class="card__title">Recursos, estado actual y número de reservas</h2>
+          <p class="card__sub">
+            {{ estadoSeleccionado ? 'Mostrando recursos en estado ' + estadoSeleccionado + '.' : 'Selecciona un estado arriba para filtrar.' }}
+          </p>
+        </div>
+        <div class="field field--estado">
+          <label for="estadoTablero">Estado</label>
+          <select id="estadoTablero" [(ngModel)]="estadoSeleccionado">
+            <option value="">Todos</option>
+            @for (e of estados; track e) {
+              <option [value]="e">{{ e }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      <div class="tabla-scroll">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>Recurso</th>
+              <th>Categoría</th>
+              <th>Ubicación</th>
+              <th>Clase</th>
+              <th>Estado</th>
+              <th class="ta-right">Reservas</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (f of filasFiltradas; track f.idRecurso) {
+              <tr>
+                <td data-label="Recurso"><strong>{{ f.recurso }}</strong></td>
+                <td data-label="Categoría">{{ f.categoria }}</td>
+                <td data-label="Ubicación">{{ f.ubicacion }}</td>
+                <td data-label="Clase">{{ f.clase === 'ESPACIO' ? 'Espacio' : 'Equipo' }}</td>
+                <td data-label="Estado"><span class="tag" [ngClass]="claseTag(f.estado)">{{ f.estado }}</span></td>
+                <td data-label="Reservas" class="ta-right">{{ f.reservas }}</td>
+              </tr>
+            }
+            @if (filasFiltradas.length === 0) {
+              <tr><td colspan="6" class="empty">No hay recursos en este estado.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  } @else if (cargando) {
+    <p class="empty">Cargando indicadores...</p>
+  }
+</section>
