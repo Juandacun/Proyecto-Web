@@ -9,7 +9,7 @@ Referencia de los servicios REST que consume la SPA. La misma información está
 - **Fechas:** `yyyy-MM-dd`. **Fecha-hora:** `yyyy-MM-dd'T'HH:mm:ss`. **Horas de reserva:** `HH:mm`.
 - **CORS:** permitido para `http://localhost:4200` con `GET, POST, PUT, PATCH, DELETE, OPTIONS`.
 - **Autenticación:** no aplica en la segunda entrega.
-- **Alias:** salvo `recursos`, cada recurso también responde sin el prefijo `/api` (por ejemplo `/reservas`), por compatibilidad. La SPA usa siempre `/api/...`.
+- **Alias:** salvo `recursos` e `indicadores`, cada recurso también responde sin el prefijo `/api` (por ejemplo `/reservas`), por compatibilidad. La SPA usa siempre `/api/...`.
 
 ### Códigos de estado
 
@@ -34,7 +34,7 @@ Referencia de los servicios REST que consume la SPA. La misma información está
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/api/recursos` | Listar recursos (filtros `clase`, `estado`, `disponible`) |
+| GET | `/api/recursos` | Listar recursos (filtros `clase`, `estado`, `disponible`, `categoriaId`, `ubicacionId`, `tipo`) |
 | GET | `/api/recursos/equipos` | Listar equipos |
 | GET | `/api/recursos/espacios` | Listar espacios |
 | GET | `/api/recursos/{id}` | Detalle de un recurso |
@@ -74,6 +74,8 @@ Referencia de los servicios REST que consume la SPA. La misma información está
 | GET | `/api/mantenimientos/{id}` | Detalle de mantenimiento |
 | POST | `/api/mantenimientos` | Abrir orden de mantenimiento |
 | PATCH | `/api/mantenimientos/{id}/finalizar` | Finalizar mantenimiento |
+| PATCH | `/api/mantenimientos/{id}/estado` | Cambiar estado (En proceso, Finalizada, Cancelada) |
+| GET | `/api/indicadores` | Indicadores del tablero |
 | GET | `/api/usuarios` | Listar usuarios |
 | GET | `/api/usuarios/{id}` | Detalle de usuario |
 
@@ -109,9 +111,12 @@ Estados usados: `Disponible`, `Reservado`, `Prestado`, `Bloqueado`.
 |-------------------|------|-------------|
 | `clase` | `EQUIPO` \| `ESPACIO` | Filtra por clase |
 | `estado` | string | Filtra por estado (sin distinguir mayúsculas) |
-| `disponible` | boolean | Si es `true`, solo recursos en estado `Disponible` (combinable con `clase`) |
+| `disponible` | boolean | Si es `true`, solo recursos en estado `Disponible` (tiene prioridad sobre `estado`) |
+| `categoriaId` | long | Filtra por categoría |
+| `ubicacionId` | long | Filtra por ubicación |
+| `tipo` | string | Filtra por tipo exacto (sin distinguir mayúsculas), p. ej. `Proyector` |
 
-Prioridad: `disponible=true` → `clase` → `estado` → todos.
+Todos los filtros son combinables. Ejemplo: `GET /api/recursos?clase=EQUIPO&categoriaId=3&estado=Disponible`.
 **200** `Recurso[]`
 
 ### `GET /api/recursos/equipos` · `GET /api/recursos/espacios`
@@ -519,6 +524,61 @@ Solo `recursoId` es obligatorio. `estado` por defecto `Abierta`; `fechaApertura`
 Sin cuerpo. Marca la orden `Finalizada`, registra `fechaCierre` y, por **RN-05**, deja el recurso `Disponible`.
 **200** `Mantenimiento` · **404**.
 
+### `PATCH /api/mantenimientos/{id}/estado`
+
+```json
+{ "estado": "En proceso" }
+```
+
+| Estado destino | Efecto |
+|----------------|--------|
+| `En proceso` | La orden queda en curso; el recurso sigue `Bloqueado` |
+| `Finalizada` | Igual que `/finalizar`: cierra la orden y deja el recurso `Disponible` (RN-05) |
+| `Cancelada` | Cierra la orden (registra `fechaCierre`); el recurso sigue `Bloqueado` hasta que el gestor lo habilite con `PATCH /api/recursos/{id}/estado` |
+
+Solo se pueden cambiar órdenes `Abierta` o `En proceso`. El estado no distingue mayúsculas.
+**200** `Mantenimiento` · **400** estado faltante o no válido · **404** · **409** la orden ya está `Finalizada` o `Cancelada`.
+
+---
+
+## Indicadores — `/api/indicadores`
+
+Controlador: `IndicadorController` · Servicio: `IndicadorService`
+
+### `GET /api/indicadores`
+
+Calcula los indicadores del tablero operativo (requisito 4.f). No recibe parámetros.
+
+```json
+{
+  "totalRecursos": 12,
+  "recursosPorEstado": { "Disponible": 9, "Reservado": 1, "Prestado": 1, "Bloqueado": 1 },
+  "reservasActivas": 1,
+  "prestamosActivos": 0,
+  "devolucionesTardias": 1,
+  "incidentes": 1,
+  "incidentesCriticos": 0,
+  "reservasPorRecurso": [
+    { "idRecurso": 2, "recurso": "Salón 201", "categoria": "Aulas y salones", "ubicacion": "Edificio de Ingeniería", "clase": "ESPACIO", "estado": "Disponible", "reservas": 2 }
+  ],
+  "reservasPorCategoria": [
+    { "categoria": "Aulas y salones", "reservas": 2 }
+  ]
+}
+```
+
+| Campo | Cálculo |
+|-------|---------|
+| `recursosPorEstado` | Recursos agrupados en los cuatro estados del tablero |
+| `reservasActivas` | Reservas en estado `Confirmada` |
+| `prestamosActivos` | Préstamos no devueltos |
+| `devolucionesTardias` | Préstamos vencidos sin devolver o devueltos después de la fecha límite |
+| `incidentes` / `incidentesCriticos` | Total de incidentes / con severidad `Crítica` |
+| `reservasPorRecurso` | Todos los recursos con su estado actual y el número de reservas (sin canceladas), de mayor a menor |
+| `reservasPorCategoria` | Suma de reservas (sin canceladas) por categoría, de mayor a menor |
+
+**200** `Indicadores`.
+
 ---
 
 ## Usuarios — `/api/usuarios`
@@ -560,6 +620,16 @@ curl -X PATCH http://localhost:8080/api/prestamos/4/devolucion -H "Content-Type:
 # Reportar incidente crítico (bloquea el recurso)
 curl -X POST http://localhost:8080/api/incidentes -H "Content-Type: application/json" \
   -d '{"recursoId":7,"tipoNovedad":"Falla de funcionamiento","severidad":"Crítica","descripcion":"No enciende"}'
+
+# Equipos de una categoría disponibles
+curl "http://localhost:8080/api/recursos?clase=EQUIPO&categoriaId=3&disponible=true"
+
+# Pasar una orden de mantenimiento a "En proceso"
+curl -X PATCH http://localhost:8080/api/mantenimientos/2/estado -H "Content-Type: application/json" \
+  -d '{"estado":"En proceso"}'
+
+# Indicadores del tablero
+curl http://localhost:8080/api/indicadores
 
 # Finalizar mantenimiento (habilita el recurso)
 curl -X PATCH http://localhost:8080/api/mantenimientos/2/finalizar
