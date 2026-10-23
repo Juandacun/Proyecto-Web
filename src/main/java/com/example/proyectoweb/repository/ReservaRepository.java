@@ -18,6 +18,6 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
     List<Reserva> findByEstadoIgnoreCase(String estado);
 
-    @Query("SELECT r FROM Reserva r WHERE r.recurso.idRecurso = :recursoId AND r.fecha = :fecha AND LOWER(r.estado) NOT IN ('cancelada', 'rechazada')")
+    @Query("SELECT r FROM Reserva r WHERE r.recurso.idRecurso = :recursoId AND r.fecha = :fecha AND LOWER(r.estado) NOT IN ('cancelada', 'rechazada', 'finalizada')")
     List<Reserva> findActivasPorRecursoYFecha(@Param("recursoId") Long recursoId, @Param("fecha") LocalDate fecha);
 }
