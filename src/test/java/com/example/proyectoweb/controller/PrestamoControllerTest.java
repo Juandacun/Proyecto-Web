@@ -105,10 +105,10 @@ class PrestamoControllerTest {
                 {
                     "recursoId": %d,
                     "usuarioResponsable": "987654321",
-                    "fechaLimite": "2026-10-30",
+                    "fechaLimite": "%s",
                     "estadoInicial": "Regular"
                 }
-                """, equipoBloqueado.getIdRecurso());
+                """, equipoBloqueado.getIdRecurso(), LocalDate.now().plusDays(5));
 
         mockMvc.perform(post("/api/prestamos/entrega")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -133,10 +133,10 @@ class PrestamoControllerTest {
                 {
                     "recursoId": %d,
                     "usuarioResponsable": "444555666",
-                    "fechaLimite": "2026-10-28",
+                    "fechaLimite": "%s",
                     "estadoInicial": "Bueno"
                 }
-                """, equipo.getIdRecurso());
+                """, equipo.getIdRecurso(), LocalDate.now().plusDays(5));
 
         mockMvc.perform(post("/api/prestamos/entrega")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -149,13 +149,13 @@ class PrestamoControllerTest {
     @Test
     void testNoPrestarEspaciosRetorna400BadRequest() throws Exception {
         // Recurso 2 es Salón 201 (ESPACIO)
-        String jsonEspacio = """
+        String jsonEspacio = String.format("""
                 {
                     "recursoId": 2,
                     "usuarioResponsable": "100200300",
-                    "fechaLimite": "2026-10-25"
+                    "fechaLimite": "%s"
                 }
-                """;
+                """, LocalDate.now().plusDays(5));
 
         mockMvc.perform(post("/api/prestamos/entrega")
                         .contentType(MediaType.APPLICATION_JSON)

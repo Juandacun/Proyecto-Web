@@ -81,9 +81,10 @@ public class RecursoController {
     }
 
     // POST /api/recursos - Crear nuevo recurso
-    @Operation(summary = "Crear nuevo recurso", description = "Crea un nuevo recurso asociando obligatoriamente su categoría y ubicación.")
+    @Operation(summary = "Crear nuevo recurso", description = "Crea un nuevo recurso asociando obligatoriamente su categoría y ubicación (exclusivo ROLE_ADMIN).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Recurso creado exitosamente"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado: requiere rol admin"),
             @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos o faltantes")
     })
     @PostMapping
@@ -114,9 +115,10 @@ public class RecursoController {
     }
 
     // PUT /api/recursos/{id} - Actualizar recurso completo
-    @Operation(summary = "Actualizar recurso", description = "Actualiza los campos de un recurso existente por su ID.")
+    @Operation(summary = "Actualizar recurso", description = "Actualiza los campos de un recurso existente por su ID (exclusivo ROLE_ADMIN).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Recurso actualizado exitosamente"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado: requiere rol admin"),
             @ApiResponse(responseCode = "404", description = "Recurso no encontrado"),
             @ApiResponse(responseCode = "400", description = "Datos de actualización inválidos")
     })
@@ -135,9 +137,10 @@ public class RecursoController {
     }
 
     // PATCH /api/recursos/{id}/estado - Actualizar solo el estado del recurso (RN-02, RN-04)
-    @Operation(summary = "Actualizar estado de recurso", description = "Permite cambiar el estado de un recurso (ej: Disponible, Bloqueado, Prestado, etc.).")
+    @Operation(summary = "Actualizar estado de recurso", description = "Permite cambiar el estado de un recurso (ej: Disponible, Bloqueado, Prestado, etc.). Requiere rol gestor o admin.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Estado del recurso actualizado exitosamente"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado: requiere rol gestor o admin"),
             @ApiResponse(responseCode = "404", description = "Recurso no encontrado"),
             @ApiResponse(responseCode = "400", description = "Estado no especificado")
     })
@@ -159,9 +162,10 @@ public class RecursoController {
     }
 
     // DELETE /api/recursos/{id} - Eliminar recurso
-    @Operation(summary = "Eliminar recurso", description = "Elimina un recurso por su ID.")
+    @Operation(summary = "Eliminar recurso", description = "Elimina un recurso por su ID (exclusivo ROLE_ADMIN).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Recurso eliminado exitosamente"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado: requiere rol admin"),
             @ApiResponse(responseCode = "404", description = "Recurso no encontrado")
     })
     @DeleteMapping("/{id}")

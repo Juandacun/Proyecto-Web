@@ -1,5 +1,6 @@
 package com.example.proyectoweb.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
 @Entity
@@ -23,6 +24,15 @@ public class Usuario {
 
     private String email;
 
+    @Column(unique = true)
+    private String username;
+
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String password;
+
+    @Column(nullable = false)
+    private String rol = "ROLE_USER"; // ROLE_USER, ROLE_GESTOR, ROLE_ADMIN
+
     public Usuario() {
     }
 
@@ -32,6 +42,20 @@ public class Usuario {
         this.codigo = codigo;
         this.documento = documento;
         this.email = email;
+        this.username = codigo;
+        this.rol = "ROLE_USER";
+    }
+
+    public Usuario(String nombre, String tipo, String codigo, String documento, String email,
+                   String username, String password, String rol) {
+        this.nombre = nombre;
+        this.tipo = tipo;
+        this.codigo = codigo;
+        this.documento = documento;
+        this.email = email;
+        this.username = username != null ? username : codigo;
+        this.password = password;
+        setRol(rol);
     }
 
     public Long getIdUsuario() {
@@ -80,5 +104,39 @@ public class Usuario {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getUsername() {
+        if (username != null && !username.isBlank()) {
+            return username;
+        }
+        return codigo;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getRol() {
+        if (rol == null || rol.isBlank()) {
+            return "ROLE_USER";
+        }
+        return rol;
+    }
+
+    public void setRol(String rol) {
+        if (rol != null && !rol.isBlank() && !rol.startsWith("ROLE_")) {
+            this.rol = "ROLE_" + rol.trim().toUpperCase();
+        } else {
+            this.rol = rol != null ? rol.trim() : "ROLE_USER";
+        }
     }
 }

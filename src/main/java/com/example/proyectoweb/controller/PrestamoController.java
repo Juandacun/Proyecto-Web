@@ -3,6 +3,7 @@ package com.example.proyectoweb.controller;
 import com.example.proyectoweb.dto.PrestamoDevolucionDTO;
 import com.example.proyectoweb.dto.PrestamoEntregaDTO;
 import com.example.proyectoweb.model.Prestamo;
+import com.example.proyectoweb.security.SecurityUtils;
 import com.example.proyectoweb.service.PrestamoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -12,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -28,8 +30,11 @@ public class PrestamoController {
     @Autowired
     private PrestamoService prestamoService;
 
+    @Autowired
+    private SecurityUtils securityUtils;
+
     // GET /api/prestamos - Listar préstamos con filtros
-    @Operation(summary = "Listar préstamos", description = "Obtiene la lista de préstamos con filtros opcionales por equipo (recursoId), usuario/documento y estado activo.")
+    @Operation(summary = "Listar préstamos", description = "Obtiene la lista de préstamos. Usuarios solicitantes (ROLE_USER) solo pueden ver sus propios préstamos; gestores y administradores pueden ver todos.")
     @ApiResponse(responseCode = "200", description = "Lista de préstamos obtenida exitosamente")
     @GetMapping
     public ResponseEntity<List<Prestamo>> listar(
@@ -40,47 +45,62 @@ public class PrestamoController {
             @Parameter(description = "Filtrar por activos (true: en curso, false: devueltos)")
             @RequestParam(required = false) Boolean activo) {
 
-        return ResponseEntity.ok(prestamoService.listarFiltrado(recursoId, usuarioId, activo));
+        List<Prestamo> prestamos = prestamoService.listarFiltrado(recursoId, usuarioId, activo);
+        if (!securityUtils.esGestorOAdmin()) {
+            prestamos = prestamos.stream()
+                    .filter(securityUtils::esPropietarioDePrestamo)
+                    .toList();
+        }
+        return ResponseEntity.ok(prestamos);
     }
 
     // GET /api/prestamos/{id} - Detalle de préstamo
-    @Operation(summary = "Buscar préstamo por ID", description = "Obtiene el detalle completo de un préstamo.")
+    @Operation(summary = "Buscar préstamo por ID", description = "Obtiene el detalle completo de un préstamo. Requiere ser propietario del préstamo o tener rol gestor/admin.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Préstamo encontrado exitosamente"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado: no es propietario del préstamo"),
             @ApiResponse(responseCode = "404", description = "Préstamo no encontrado")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Prestamo> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<?> buscarPorId(@PathVariable Long id) {
         Prestamo prestamo = prestamoService.buscarPorId(id);
         if (prestamo == null) {
             return ResponseEntity.notFound().build();
+        }
+        if (!securityUtils.esPropietarioDePrestamo(prestamo)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Acceso denegado: solo puedes consultar tus propios préstamos."));
         }
         return ResponseEntity.ok(prestamo);
     }
 
     // GET /api/prestamos/activos - Listar préstamos en curso
-    @Operation(summary = "Listar préstamos activos", description = "Obtiene únicamente los préstamos en curso que aún no han sido devueltos.")
+    @Operation(summary = "Listar préstamos activos", description = "Obtiene los préstamos en curso. Exclusivo para gestores y administradores.")
     @ApiResponse(responseCode = "200", description = "Lista de préstamos activos obtenida exitosamente")
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @GetMapping("/activos")
     public ResponseEntity<List<Prestamo>> listarActivos() {
         return ResponseEntity.ok(prestamoService.listarActivos());
     }
 
     // GET /api/prestamos/tardios - Listar préstamos tardíos o vencidos
-    @Operation(summary = "Listar préstamos tardíos", description = "Obtiene los préstamos cuya fecha límite ya venció o cuya devolución se registró fuera del plazo.")
+    @Operation(summary = "Listar préstamos tardíos", description = "Obtiene los préstamos vencidos. Exclusivo para gestores y administradores.")
     @ApiResponse(responseCode = "200", description = "Lista de préstamos tardíos obtenida exitosamente")
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @GetMapping("/tardios")
     public ResponseEntity<List<Prestamo>> listarTardios() {
         return ResponseEntity.ok(prestamoService.listarTardios());
     }
 
     // POST /api/prestamos/entrega y POST /api/prestamos - Registrar entrega de equipo (RN-02, RN-03)
-    @Operation(summary = "Registrar entrega de equipo", description = "Registra un nuevo préstamo validando que el equipo no esté bloqueado (RN-02) ni prestado previamente (RN-03), y transiciona el recurso a 'Prestado'.")
+    @Operation(summary = "Registrar entrega de equipo", description = "Registra un nuevo préstamo validando que el equipo no esté bloqueado (RN-02) ni prestado previamente (RN-03). Exclusivo ROLE_GESTOR y ROLE_ADMIN.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Préstamo registrado exitosamente"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado: requiere rol gestor o admin"),
             @ApiResponse(responseCode = "400", description = "Parámetros de entrega inválidos"),
             @ApiResponse(responseCode = "409", description = "Conflicto por equipo bloqueado (RN-02) o equipo ya prestado (RN-03)")
     })
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @PostMapping(path = {"", "/entrega"})
     public ResponseEntity<?> registrarEntrega(@RequestBody PrestamoEntregaDTO dto) {
         try {
@@ -103,12 +123,14 @@ public class PrestamoController {
     }
 
     // PATCH /api/prestamos/{id}/devolucion (y GET /devolucion para compatibilidad) - Registrar devolución de equipo
-    @Operation(summary = "Registrar devolución de equipo", description = "Registra la devolución del equipo, calcula si fue puntual o tardía y libera el recurso a 'Disponible'.")
+    @Operation(summary = "Registrar devolución de equipo", description = "Registra la devolución del equipo, calcula si fue puntual o tardía y libera el recurso a 'Disponible'. Exclusivo ROLE_GESTOR y ROLE_ADMIN.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Devolución registrada exitosamente"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado: requiere rol gestor o admin"),
             @ApiResponse(responseCode = "404", description = "Préstamo no encontrado"),
             @ApiResponse(responseCode = "409", description = "El préstamo ya fue devuelto")
     })
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     @RequestMapping(value = "/{id}/devolucion", method = {RequestMethod.PATCH, RequestMethod.POST, RequestMethod.GET})
     public ResponseEntity<?> registrarDevolucion(
             @PathVariable Long id,
