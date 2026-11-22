@@ -53,7 +53,6 @@ public class MantenimientoService {
         return repository.findById(id);
     }
 
-    // CREAR ORDEN DE MANTENIMIENTO (Permite abrir sobre recursos bloqueados)
     public Mantenimiento crearOrden(MantenimientoDTO dto) {
         if (dto == null) {
             throw new IllegalArgumentException("Los datos de mantenimiento no pueden ser nulos.");
@@ -81,7 +80,6 @@ public class MantenimientoService {
 
         Mantenimiento guardado = repository.save(mantenimiento);
 
-        // Asegurar que el recurso permanezca bloqueado durante el mantenimiento
         if (!recurso.estaBloqueado()) {
             recurso.setEstado("Bloqueado");
             recursoService.actualizar(recurso);
@@ -90,18 +88,21 @@ public class MantenimientoService {
         return guardado;
     }
 
-    // RN-05: Al cambiar el estado de la intervención a Finalizada, actualizar automáticamente el recurso a 'Disponible'
     public Mantenimiento finalizar(Long id) {
         Mantenimiento mantenimiento = buscarPorId(id);
         if (mantenimiento == null) {
             return null;
+        }
+        if ("Finalizada".equalsIgnoreCase(mantenimiento.getEstado())
+                || "Cancelada".equalsIgnoreCase(mantenimiento.getEstado())) {
+            throw new IllegalStateException("La orden #" + id + " ya está " + mantenimiento.getEstado()
+                    + " y no puede finalizarse nuevamente.");
         }
 
         mantenimiento.setEstado("Finalizada");
         mantenimiento.setFechaCierre(LocalDateTime.now());
         Mantenimiento guardado = repository.save(mantenimiento);
 
-        // RN-05: Liberar el recurso a 'Disponible'
         Recurso recurso = mantenimiento.getRecurso();
         if (recurso != null) {
             recurso.setEstado("Disponible");
@@ -111,9 +112,44 @@ public class MantenimientoService {
         return guardado;
     }
 
+    public Mantenimiento actualizar(Long id, MantenimientoDTO dto) {
+        Mantenimiento existente = buscarPorId(id);
+        if (existente == null) {
+            return null;
+        }
+        if (dto == null) {
+            throw new IllegalArgumentException("Los datos de mantenimiento no pueden ser nulos.");
+        }
+        if ("Finalizada".equalsIgnoreCase(existente.getEstado())
+                || "Cancelada".equalsIgnoreCase(existente.getEstado())) {
+            throw new IllegalStateException("La orden #" + id + " ya está " + existente.getEstado()
+                    + " y no puede modificarse.");
+        }
+
+        if (dto.getDiagnostico() != null) {
+            existente.setDiagnostico(dto.getDiagnostico().trim());
+        }
+        if (dto.getIdUsuarioResponsable() != null) {
+            existente.setIdUsuarioResponsable(dto.getIdUsuarioResponsable().trim());
+        }
+        if (dto.getObservaciones() != null) {
+            existente.setObservaciones(dto.getObservaciones().trim());
+        }
+
+        return repository.save(existente);
+    }
+
+    public boolean eliminar(Long id) {
+        Mantenimiento existente = buscarPorId(id);
+        if (existente == null) {
+            return false;
+        }
+        repository.delete(existente);
+        return true;
+    }
+
     private static final List<String> ESTADOS = List.of("Abierta", "En proceso", "Finalizada", "Cancelada");
 
-    // Cambiar estado de la intervención: Abierta -> En proceso -> Finalizada | Cancelada
     public Mantenimiento cambiarEstado(Long id, String nuevoEstado) {
         if (nuevoEstado == null || nuevoEstado.isBlank()) {
             throw new IllegalArgumentException("El nuevo estado es obligatorio.");
@@ -138,7 +174,6 @@ public class MantenimientoService {
         }
         mantenimiento.setEstado(estado);
         if ("Cancelada".equals(estado)) {
-            // El recurso sigue bloqueado: el gestor decide si lo habilita (RN-04)
             mantenimiento.setFechaCierre(LocalDateTime.now());
         }
         return repository.save(mantenimiento);

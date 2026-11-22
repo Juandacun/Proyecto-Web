@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -26,7 +27,6 @@ public class IncidenteController {
     @Autowired
     private IncidenteService incidenteService;
 
-    // GET /api/incidentes - Listar incidentes con filtros opcionales
     @Operation(summary = "Listar incidentes", description = "Obtiene la lista de incidentes o novedades reportadas, con filtros opcionales por ID de recurso y severidad.")
     @ApiResponse(responseCode = "200", description = "Lista de incidentes obtenida exitosamente")
     @GetMapping
@@ -39,7 +39,6 @@ public class IncidenteController {
         return ResponseEntity.ok(incidenteService.listarFiltrado(recursoId, severidad));
     }
 
-    // GET /api/incidentes/{id} - Detalle de un incidente
     @Operation(summary = "Buscar incidente por ID", description = "Obtiene los detalles de un incidente específico.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Incidente encontrado"),
@@ -54,7 +53,6 @@ public class IncidenteController {
         return ResponseEntity.ok(incidente);
     }
 
-    // POST /api/incidentes - Reportar nuevo incidente (RN-04)
     @Operation(summary = "Reportar incidente", description = "Registra un incidente sobre un recurso. Si la severidad es 'Crítica', el recurso pasa automáticamente a 'Bloqueado' (RN-04).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Incidente registrado exitosamente"),
@@ -72,5 +70,39 @@ public class IncidenteController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @Operation(summary = "Actualizar incidente", description = "Actualiza tipo, severidad o descripción de un incidente. Si pasa a 'Crítica', bloquea el recurso (RN-04).")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Incidente actualizado exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+            @ApiResponse(responseCode = "404", description = "Incidente no encontrado")
+    })
+    @PutMapping("/{id}")
+    public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody IncidenteDTO dto) {
+        try {
+            Incidente actualizado = incidenteService.actualizar(id, dto);
+            if (actualizado == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "El incidente con ID " + id + " no existe."));
+            }
+            return ResponseEntity.ok(actualizado);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @Operation(summary = "Eliminar incidente", description = "Elimina el registro de un incidente por su ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Incidente eliminado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Incidente no encontrado")
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> eliminar(@PathVariable Long id) {
+        if (!incidenteService.eliminar(id)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "El incidente con ID " + id + " no existe."));
+        }
+        return ResponseEntity.noContent().build();
     }
 }

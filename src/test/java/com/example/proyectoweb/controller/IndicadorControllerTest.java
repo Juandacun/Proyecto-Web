@@ -1,10 +1,13 @@
 package com.example.proyectoweb.controller;
 
 import com.example.proyectoweb.dto.IncidenteDTO;
+import com.example.proyectoweb.dto.MantenimientoDTO;
 import com.example.proyectoweb.model.Categoria;
+import com.example.proyectoweb.model.Mantenimiento;
 import com.example.proyectoweb.model.Recurso;
 import com.example.proyectoweb.model.Ubicacion;
 import com.example.proyectoweb.service.IncidenteService;
+import com.example.proyectoweb.service.MantenimientoService;
 import com.example.proyectoweb.service.RecursoService;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +35,9 @@ class IndicadorControllerTest {
 
     @Autowired
     private IncidenteService incidenteService;
+
+    @Autowired
+    private MantenimientoService mantenimientoService;
 
     @Autowired
     private RecursoService recursoService;
@@ -79,10 +85,11 @@ class IndicadorControllerTest {
     }
 
     @Test
-    void testIncidenteCriticoSeReflejaEnIndicadores() throws Exception {
+    void testCicloIncidenteCriticoYMantenimientoSeReflejaEnIndicadores() throws Exception {
         String antes = obtenerJson();
         int criticosAntes = JsonPath.read(antes, "$.incidentesCriticos");
         int bloqueadosAntes = JsonPath.read(antes, "$.recursosPorEstado.Bloqueado");
+        int disponiblesAntes = JsonPath.read(antes, "$.recursosPorEstado.Disponible");
         int totalAntes = JsonPath.read(antes, "$.totalRecursos");
 
         Recurso recurso = crearRecursoPrueba("Tablet indicadores");
@@ -93,9 +100,17 @@ class IndicadorControllerTest {
         dto.setDescripcion("Pantalla rota");
         incidenteService.registrarIncidente(dto);
 
-        String despues = obtenerJson();
-        assertEquals(totalAntes + 1, (int) JsonPath.read(despues, "$.totalRecursos"));
-        assertEquals(criticosAntes + 1, (int) JsonPath.read(despues, "$.incidentesCriticos"));
-        assertEquals(bloqueadosAntes + 1, (int) JsonPath.read(despues, "$.recursosPorEstado.Bloqueado"));
+        String trasIncidente = obtenerJson();
+        assertEquals(totalAntes + 1, (int) JsonPath.read(trasIncidente, "$.totalRecursos"));
+        assertEquals(criticosAntes + 1, (int) JsonPath.read(trasIncidente, "$.incidentesCriticos"));
+        assertEquals(bloqueadosAntes + 1, (int) JsonPath.read(trasIncidente, "$.recursosPorEstado.Bloqueado"));
+
+        Mantenimiento orden = mantenimientoService.crearOrden(
+                new MantenimientoDTO(recurso.getIdRecurso(), "Cambio de pantalla", "tecnico01"));
+        mantenimientoService.finalizar(orden.getIdMantenimiento());
+
+        String trasMantenimiento = obtenerJson();
+        assertEquals(bloqueadosAntes, (int) JsonPath.read(trasMantenimiento, "$.recursosPorEstado.Bloqueado"));
+        assertEquals(disponiblesAntes + 1, (int) JsonPath.read(trasMantenimiento, "$.recursosPorEstado.Disponible"));
     }
 }
