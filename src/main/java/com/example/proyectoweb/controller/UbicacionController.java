@@ -50,9 +50,10 @@ public class UbicacionController {
     }
 
     // POST /api/ubicaciones - Crear nueva ubicación
-    @Operation(summary = "Crear nueva ubicación", description = "Registra una nueva ubicación o edificio en el campus.")
+    @Operation(summary = "Crear nueva ubicación", description = "Registra una nueva ubicación o edificio en el campus (exclusivo ROLE_ADMIN).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Ubicación creada exitosamente"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado: requiere rol admin"),
             @ApiResponse(responseCode = "400", description = "Datos de ubicación inválidos")
     })
     @PostMapping
@@ -70,9 +71,10 @@ public class UbicacionController {
     }
 
     // PUT /api/ubicaciones/{id} - Actualizar ubicación existente
-    @Operation(summary = "Actualizar ubicación", description = "Actualiza el nombre, edificio y descripción de una ubicación existente.")
+    @Operation(summary = "Actualizar ubicación", description = "Actualiza el nombre, edificio y descripción de una ubicación existente (exclusivo ROLE_ADMIN).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Ubicación actualizada exitosamente"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado: requiere rol admin"),
             @ApiResponse(responseCode = "404", description = "Ubicación no encontrada"),
             @ApiResponse(responseCode = "400", description = "Datos de ubicación inválidos")
     })
@@ -91,9 +93,10 @@ public class UbicacionController {
     }
 
     // DELETE /api/ubicaciones/{id} - Eliminar ubicación
-    @Operation(summary = "Eliminar ubicación", description = "Elimina una ubicación por su ID.")
+    @Operation(summary = "Eliminar ubicación", description = "Elimina una ubicación por su ID (exclusivo ROLE_ADMIN).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Ubicación eliminada exitosamente"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado: requiere rol admin"),
             @ApiResponse(responseCode = "404", description = "Ubicación no encontrada")
     })
     @DeleteMapping("/{id}")

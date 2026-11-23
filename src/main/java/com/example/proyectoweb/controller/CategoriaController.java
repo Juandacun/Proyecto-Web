@@ -50,9 +50,10 @@ public class CategoriaController {
     }
 
     // POST /api/categorias - Crear nueva categoría
-    @Operation(summary = "Crear nueva categoría", description = "Registra una nueva categoría en el sistema.")
+    @Operation(summary = "Crear nueva categoría", description = "Registra una nueva categoría en el sistema (exclusivo ROLE_ADMIN).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Categoría creada exitosamente"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado: requiere rol admin"),
             @ApiResponse(responseCode = "400", description = "Datos de categoría inválidos")
     })
     @PostMapping
@@ -70,9 +71,10 @@ public class CategoriaController {
     }
 
     // PUT /api/categorias/{id} - Actualizar categoría existente
-    @Operation(summary = "Actualizar categoría", description = "Actualiza el nombre y descripción de una categoría existente.")
+    @Operation(summary = "Actualizar categoría", description = "Actualiza el nombre y descripción de una categoría existente (exclusivo ROLE_ADMIN).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Categoría actualizada exitosamente"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado: requiere rol admin"),
             @ApiResponse(responseCode = "404", description = "Categoría no encontrada"),
             @ApiResponse(responseCode = "400", description = "Datos de categoría inválidos")
     })
@@ -91,9 +93,10 @@ public class CategoriaController {
     }
 
     // DELETE /api/categorias/{id} - Eliminar categoría
-    @Operation(summary = "Eliminar categoría", description = "Elimina una categoría por su ID.")
+    @Operation(summary = "Eliminar categoría", description = "Elimina una categoría por su ID (exclusivo ROLE_ADMIN).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Categoría eliminada exitosamente"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado: requiere rol admin"),
             @ApiResponse(responseCode = "404", description = "Categoría no encontrada")
     })
     @DeleteMapping("/{id}")

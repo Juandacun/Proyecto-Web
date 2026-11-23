@@ -2,6 +2,8 @@ package com.example.proyectoweb.controller;
 
 import com.example.proyectoweb.dto.IncidenteDTO;
 import com.example.proyectoweb.model.Incidente;
+import com.example.proyectoweb.model.Usuario;
+import com.example.proyectoweb.security.SecurityUtils;
 import com.example.proyectoweb.service.IncidenteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,7 +29,10 @@ public class IncidenteController {
     @Autowired
     private IncidenteService incidenteService;
 
-    @Operation(summary = "Listar incidentes", description = "Obtiene la lista de incidentes o novedades reportadas, con filtros opcionales por ID de recurso y severidad.")
+    @Autowired
+    private SecurityUtils securityUtils;
+
+    @Operation(summary = "Listar incidentes", description = "Obtiene la lista de incidentes o novedades reportadas, con filtros opcionales por ID de recurso y severidad. Para solicitantes (ROLE_USER), anonimiza la identidad de otros reportantes por privacidad.")
     @ApiResponse(responseCode = "200", description = "Lista de incidentes obtenida exitosamente")
     @GetMapping
     public ResponseEntity<List<Incidente>> listar(
@@ -36,10 +41,17 @@ public class IncidenteController {
             @Parameter(description = "Filtrar por severidad: Leve, Media, Crítica")
             @RequestParam(required = false) String severidad) {
 
-        return ResponseEntity.ok(incidenteService.listarFiltrado(recursoId, severidad));
+        List<Incidente> lista = incidenteService.listarFiltrado(recursoId, severidad);
+        if (!securityUtils.esGestorOAdmin()) {
+            String currentUser = securityUtils.getCurrentUsername();
+            lista = lista.stream()
+                    .map(inc -> sanitizarParaUsuario(inc, currentUser))
+                    .toList();
+        }
+        return ResponseEntity.ok(lista);
     }
 
-    @Operation(summary = "Buscar incidente por ID", description = "Obtiene los detalles de un incidente específico.")
+    @Operation(summary = "Buscar incidente por ID", description = "Obtiene los detalles de un incidente específico. Protege la identidad de terceros para usuarios solicitantes.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Incidente encontrado"),
             @ApiResponse(responseCode = "404", description = "Incidente no encontrado")
@@ -50,16 +62,38 @@ public class IncidenteController {
         if (incidente == null) {
             return ResponseEntity.notFound().build();
         }
+        if (!securityUtils.esGestorOAdmin()) {
+            String currentUser = securityUtils.getCurrentUsername();
+            incidente = sanitizarParaUsuario(incidente, currentUser);
+        }
         return ResponseEntity.ok(incidente);
     }
 
-    @Operation(summary = "Reportar incidente", description = "Registra un incidente sobre un recurso. Si la severidad es 'Crítica', el recurso pasa automáticamente a 'Bloqueado' (RN-04).")
+    @Operation(summary = "Reportar incidente", description = "Registra un incidente sobre un recurso. La identidad del reportante se asocia al usuario autenticado en SecurityContext para evitar suplantación (RN-04).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Incidente registrado exitosamente"),
             @ApiResponse(responseCode = "400", description = "Datos de incidente inválidos o recurso inexistente")
     })
     @PostMapping
     public ResponseEntity<?> reportar(@RequestBody IncidenteDTO dto) {
+        String currentUser = securityUtils.getCurrentUsername();
+        if (currentUser != null && !currentUser.isBlank()) {
+            if (!securityUtils.esGestorOAdmin()) {
+                dto.setReportadoPor(currentUser);
+                dto.setUsuarioId(currentUser);
+            } else {
+                String reportanteSolicitado = dto.getReportadoPor();
+                if (reportanteSolicitado != null && !reportanteSolicitado.isBlank()
+                        && !reportanteSolicitado.equalsIgnoreCase(currentUser)) {
+                    String valorConTrazabilidad = reportanteSolicitado.trim() + " (registrado por " + currentUser + ")";
+                    dto.setReportadoPor(valorConTrazabilidad);
+                    dto.setUsuarioId(valorConTrazabilidad);
+                } else {
+                    dto.setReportadoPor(currentUser);
+                    dto.setUsuarioId(currentUser);
+                }
+            }
+        }
         try {
             Incidente nuevo = incidenteService.registrarIncidente(dto);
             URI location = ServletUriComponentsBuilder.fromCurrentRequest()
@@ -104,5 +138,36 @@ public class IncidenteController {
                     .body(Map.of("error", "El incidente con ID " + id + " no existe."));
         }
         return ResponseEntity.noContent().build();
+    }
+
+    private Incidente sanitizarParaUsuario(Incidente original, String currentUsername) {
+        if (original == null) return null;
+        boolean esPropio = esReportantePropio(original, currentUsername);
+
+        String reportanteProtegido = esPropio ? original.getReportadoPor() : null;
+
+        Incidente copia = new Incidente();
+        copia.setIdIncidente(original.getIdIncidente());
+        copia.setRecurso(original.getRecurso());
+        copia.setTipo(original.getTipo());
+        copia.setSeveridad(original.getSeveridad());
+        copia.setDescripcion(original.getDescripcion());
+        copia.setFecha(original.getFecha());
+        copia.setReportadoPor(reportanteProtegido);
+        return copia;
+    }
+
+    private boolean esReportantePropio(Incidente inc, String currentUsername) {
+        if (inc == null || inc.getReportadoPor() == null || currentUsername == null) return false;
+        String rep = inc.getReportadoPor().trim();
+        if (rep.equalsIgnoreCase(currentUsername.trim())) return true;
+        Usuario u = securityUtils.getCurrentUsuario().orElse(null);
+        if (u != null) {
+            if (rep.equalsIgnoreCase(u.getCodigo())) return true;
+            if (rep.equalsIgnoreCase(u.getNombre())) return true;
+            if (u.getDocumento() != null && rep.equalsIgnoreCase(u.getDocumento())) return true;
+            if (u.getEmail() != null && rep.equalsIgnoreCase(u.getEmail())) return true;
+        }
+        return false;
     }
 }
