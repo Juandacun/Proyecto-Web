@@ -50,7 +50,8 @@ public class SpringSecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager)
+            throws Exception {
         JwtAuthenticationFilter authFilter = new JwtAuthenticationFilter(authenticationManager, usuarioRepository);
         authFilter.setFilterProcessesUrl("/login");
 
@@ -60,8 +61,7 @@ public class SpringSecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(authenticationEntryPoint)
-                        .accessDeniedHandler(accessDeniedHandler)
-                )
+                        .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
                         // 1. Recursos estáticos, documentación OpenAPI y vistas públicas
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -97,23 +97,33 @@ public class SpringSecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/recursos/{id}/estado").hasAnyRole("ADMIN", "GESTOR")
                         .requestMatchers("/api/mantenimientos/**", "/mantenimientos/**").hasAnyRole("ADMIN", "GESTOR")
                         .requestMatchers("/tablero/**", "/api/indicadores/**").hasAnyRole("ADMIN", "GESTOR")
-                        .requestMatchers(HttpMethod.POST, "/api/prestamos/**", "/prestamos/**").hasAnyRole("ADMIN", "GESTOR")
-                        .requestMatchers(HttpMethod.PATCH, "/api/prestamos/**", "/prestamos/**").hasAnyRole("ADMIN", "GESTOR")
-                        .requestMatchers(HttpMethod.PUT, "/api/prestamos/**", "/prestamos/**").hasAnyRole("ADMIN", "GESTOR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/prestamos/**", "/prestamos/**").hasAnyRole("ADMIN", "GESTOR")
+                        .requestMatchers(HttpMethod.POST, "/api/prestamos/**", "/prestamos/**")
+                        .hasAnyRole("ADMIN", "GESTOR")
+                        .requestMatchers(HttpMethod.PATCH, "/api/prestamos/**", "/prestamos/**")
+                        .hasAnyRole("ADMIN", "GESTOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/prestamos/**", "/prestamos/**")
+                        .hasAnyRole("ADMIN", "GESTOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/prestamos/**", "/prestamos/**")
+                        .hasAnyRole("ADMIN", "GESTOR")
 
-                        // 6. Consultas de préstamos (autenticado, con verificación de propietario para solicitantes)
+                        // 6. Consultas de préstamos (autenticado, con verificación de propietario para
+                        // solicitantes)
                         .requestMatchers(HttpMethod.GET, "/api/prestamos/**", "/prestamos/**").authenticated()
 
-                        // 7. Gestión de reservas (autenticado, con reglas de propietario para ROLE_USER)
+                        // 7. Gestión de reservas (autenticado, con reglas de propietario para
+                        // ROLE_USER)
                         .requestMatchers("/api/reservas/**", "/reservas/**").authenticated()
 
                         // 8. Reporte y consulta de incidentes (autenticado)
+                        // 8. Reporte y consulta de incidentes (edición/borrado solo Gestor o Admin)
+                        .requestMatchers(HttpMethod.PUT, "/api/incidentes/**", "/incidentes/**")
+                        .hasAnyRole("ADMIN", "GESTOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/incidentes/**", "/incidentes/**")
+                        .hasAnyRole("ADMIN", "GESTOR")
                         .requestMatchers("/api/incidentes/**", "/incidentes/**").authenticated()
 
                         // 9. Cualquier otra petición debe estar autenticada
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .addFilter(authFilter)
                 .addFilter(new JwtValidationFilter(authenticationManager, usuarioRepository))
                 .build();
@@ -124,8 +134,10 @@ public class SpringSecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(Arrays.asList("*"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
-        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin"));
-        config.setExposedHeaders(List.of("Authorization", "Content-Type", "Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"));
+        config.setAllowedHeaders(
+                Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin"));
+        config.setExposedHeaders(List.of("Authorization", "Content-Type", "Access-Control-Allow-Origin",
+                "Access-Control-Allow-Credentials"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 
@@ -136,7 +148,8 @@ public class SpringSecurityConfig {
 
     @Bean
     public FilterRegistrationBean<CorsFilter> corsFilterRegistrationBean() {
-        FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(new CorsFilter(corsConfigurationSource()));
+        FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(
+                new CorsFilter(corsConfigurationSource()));
         bean.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return bean;
     }
