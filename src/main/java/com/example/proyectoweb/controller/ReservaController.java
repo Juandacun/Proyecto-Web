@@ -3,6 +3,7 @@ package com.example.proyectoweb.controller;
 import com.example.proyectoweb.dto.ReservaDTO;
 import com.example.proyectoweb.model.Recurso;
 import com.example.proyectoweb.model.Reserva;
+import com.example.proyectoweb.security.SecurityUtils;
 import com.example.proyectoweb.service.RecursoService;
 import com.example.proyectoweb.service.ReservaService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,9 +20,9 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.time.LocalDate;
-import java.util.List;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -37,8 +38,11 @@ public class ReservaController {
     @Autowired
     private RecursoService recursoService;
 
+    @Autowired
+    private SecurityUtils securityUtils;
+
     // GET /api/reservas - Listar reservas con filtros opcionales
-    @Operation(summary = "Listar reservas", description = "Obtiene la lista de reservas, con filtros opcionales y combinables por ID de recurso, fecha y estado.")
+    @Operation(summary = "Listar reservas", description = "Obtiene la lista de reservas. Usuarios solicitantes (ROLE_USER) solo visualizan sus propias reservas; gestores y administradores visualizan todas.")
     @ApiResponse(responseCode = "200", description = "Lista de reservas obtenida exitosamente")
     @GetMapping
     public ResponseEntity<List<Reserva>> listar(
@@ -49,20 +53,31 @@ public class ReservaController {
             @Parameter(description = "Filtrar por estado textual: Confirmada, Cancelada, Finalizada")
             @RequestParam(required = false) String estado) {
 
-        return ResponseEntity.ok(reservaService.filtrar(recursoId, fecha, estado));
+        List<Reserva> reservas = reservaService.filtrar(recursoId, fecha, estado);
+        if (!securityUtils.esGestorOAdmin()) {
+            reservas = reservas.stream()
+                    .filter(securityUtils::esPropietarioDeReserva)
+                    .toList();
+        }
+        return ResponseEntity.ok(reservas);
     }
 
     // GET /api/reservas/{id} - Obtener reserva por ID
-    @Operation(summary = "Buscar reserva por ID", description = "Obtiene el detalle de una reserva específica.")
+    @Operation(summary = "Buscar reserva por ID", description = "Obtiene el detalle de una reserva específica. Requiere que pertenezca al usuario solicitante autenticado o rol gestor/admin.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Reserva encontrada exitosamente"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado: no es propietario de la reserva"),
             @ApiResponse(responseCode = "404", description = "Reserva no encontrada")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Reserva> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<?> buscarPorId(@PathVariable Long id) {
         Reserva reserva = reservaService.buscarPorId(id);
         if (reserva == null) {
             return ResponseEntity.notFound().build();
+        }
+        if (!securityUtils.esPropietarioDeReserva(reserva)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Acceso denegado: solo puedes consultar tus propias reservas."));
         }
         return ResponseEntity.ok(reserva);
     }
@@ -153,7 +168,7 @@ public class ReservaController {
     }
 
     // POST /api/reservas - Crear nueva reserva con RN-01 y RN-02
-    @Operation(summary = "Crear nueva reserva", description = "Crea una nueva reserva validando que no haya solapamiento de horarios (RN-01) y que el recurso no esté bloqueado (RN-02).")
+    @Operation(summary = "Crear nueva reserva", description = "Crea una nueva reserva validando que no haya solapamiento de horarios (RN-01) y que el recurso no esté bloqueado (RN-02). El solicitante se vincula automáticamente al usuario autenticado.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Reserva creada exitosamente"),
             @ApiResponse(responseCode = "400", description = "Parámetros de reserva inválidos"),
@@ -161,6 +176,13 @@ public class ReservaController {
     })
     @PostMapping
     public ResponseEntity<?> crear(@RequestBody ReservaDTO dto) {
+        // Para usuarios no-gestor/admin, garantizar que la reserva pertenezca a su identidad autenticada
+        if (!securityUtils.esGestorOAdmin()) {
+            String currentLogin = securityUtils.getCurrentUsername();
+            if (currentLogin != null && !currentLogin.isBlank()) {
+                dto.setSolicitante(currentLogin);
+            }
+        }
         try {
             Reserva nueva = reservaService.crearDesdeDTO(dto);
             URI location = ServletUriComponentsBuilder.fromCurrentRequest()
@@ -180,21 +202,28 @@ public class ReservaController {
     }
 
     // PUT /api/reservas/{id} - Actualizar reserva existente con RN-01 y RN-02
-    @Operation(summary = "Actualizar reserva", description = "Actualiza los datos de una reserva existente verificando solapamiento (RN-01) y estado del recurso (RN-02).")
+    @Operation(summary = "Actualizar reserva", description = "Actualiza los datos de una reserva existente verificando solapamiento (RN-01), estado del recurso (RN-02) y pertenencia al usuario.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Reserva actualizada exitosamente"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado: no es propietario de la reserva"),
             @ApiResponse(responseCode = "404", description = "Reserva no encontrada"),
             @ApiResponse(responseCode = "400", description = "Parámetros inválidos"),
             @ApiResponse(responseCode = "409", description = "Conflicto por horario solapado (RN-01), recurso bloqueado (RN-02) o la reserva ya inició")
     })
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody ReservaDTO dto) {
+        Reserva existente = reservaService.buscarPorId(id);
+        if (existente == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "La reserva con ID " + id + " no existe."));
+        }
+        if (!securityUtils.esPropietarioDeReserva(existente)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Acceso denegado: no puedes modificar reservas pertenecientes a otros usuarios."));
+        }
+
         try {
             Reserva actualizada = reservaService.actualizar(id, dto);
-            if (actualizada == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("error", "La reserva con ID " + id + " no existe."));
-            }
             return ResponseEntity.ok(actualizada);
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
@@ -207,36 +236,48 @@ public class ReservaController {
     }
 
     // PATCH o POST /api/reservas/{id}/cancelar - Cancelar reserva
-    @Operation(summary = "Cancelar reserva", description = "Cancela una reserva Confirmada que aún no ha iniciado (409 si ya inició o no está Confirmada) y libera el recurso a Disponible si no tiene otras reservas activas.")
+    @Operation(summary = "Cancelar reserva", description = "Cancela una reserva Confirmada que aún no ha iniciado y pertenece al usuario autenticado (o gestor/admin).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Reserva cancelada exitosamente"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado: no es propietario de la reserva"),
             @ApiResponse(responseCode = "409", description = "La reserva ya inició o no está Confirmada"),
             @ApiResponse(responseCode = "404", description = "Reserva no encontrada")
     })
     @RequestMapping(value = "/{id}/cancelar", method = {RequestMethod.PATCH, RequestMethod.POST})
     public ResponseEntity<?> cancelar(@PathVariable Long id) {
+        Reserva existente = reservaService.buscarPorId(id);
+        if (existente == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "La reserva con ID " + id + " no existe."));
+        }
+        if (!securityUtils.esPropietarioDeReserva(existente)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Acceso denegado: no puedes cancelar reservas pertenecientes a otros usuarios."));
+        }
+
         Reserva cancelada;
         try {
             cancelada = reservaService.cancelar(id);
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage(), "codigo", codigoDe(e)));
         }
-        if (cancelada == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "La reserva con ID " + id + " no existe."));
-        }
         return ResponseEntity.ok(cancelada);
     }
 
     // PATCH o POST /api/reservas/{id}/finalizar - Finalizar reserva
-    @Operation(summary = "Finalizar reserva", description = "Marca la reserva como finalizada y libera el recurso si corresponde.")
+    @Operation(summary = "Finalizar reserva", description = "Marca la reserva como finalizada y libera el recurso si corresponde (ROLE_GESTOR o ROLE_ADMIN).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Reserva finalizada exitosamente"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado: requiere rol gestor o admin"),
             @ApiResponse(responseCode = "409", description = "La reserva no está Confirmada"),
             @ApiResponse(responseCode = "404", description = "Reserva no encontrada")
     })
     @RequestMapping(value = "/{id}/finalizar", method = {RequestMethod.PATCH, RequestMethod.POST})
     public ResponseEntity<?> finalizar(@PathVariable Long id) {
+        if (!securityUtils.esGestorOAdmin()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Acceso denegado: solo el gestor o administrador pueden finalizar reservas operativamente."));
+        }
         Reserva finalizada;
         try {
             finalizada = reservaService.finalizar(id);
@@ -251,13 +292,18 @@ public class ReservaController {
     }
 
     // DELETE /api/reservas/{id} - Eliminar reserva
-    @Operation(summary = "Eliminar reserva", description = "Elimina físicamente una reserva por su ID.")
+    @Operation(summary = "Eliminar reserva", description = "Elimina físicamente una reserva por su ID (ROLE_ADMIN).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Reserva eliminada exitosamente"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado: requiere rol admin"),
             @ApiResponse(responseCode = "404", description = "Reserva no encontrada")
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminar(@PathVariable Long id) {
+        if (!securityUtils.esAdmin()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Acceso denegado: solo el administrador del sistema puede eliminar reservas."));
+        }
         boolean eliminada = reservaService.eliminar(id);
         if (!eliminada) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -27,7 +28,6 @@ public class MantenimientoController {
     @Autowired
     private MantenimientoService mantenimientoService;
 
-    // GET /api/mantenimientos - Listar órdenes de mantenimiento con filtros
     @Operation(summary = "Listar mantenimientos", description = "Obtiene la lista de órdenes de mantenimiento, con filtros opcionales por ID de recurso y estado.")
     @ApiResponse(responseCode = "200", description = "Lista de órdenes de mantenimiento obtenida exitosamente")
     @GetMapping
@@ -40,7 +40,6 @@ public class MantenimientoController {
         return ResponseEntity.ok(mantenimientoService.listarFiltrado(recursoId, estado));
     }
 
-    // GET /api/mantenimientos/{id} - Detalle de orden de mantenimiento
     @Operation(summary = "Buscar mantenimiento por ID", description = "Obtiene el detalle de una orden de mantenimiento.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Mantenimiento encontrado"),
@@ -55,7 +54,6 @@ public class MantenimientoController {
         return ResponseEntity.ok(mantenimiento);
     }
 
-    // POST /api/mantenimientos - Crear orden de mantenimiento
     @Operation(summary = "Crear orden de mantenimiento", description = "Abre una nueva orden de mantenimiento sobre un recurso (incluso si está bloqueado) y asegura que permanezca bloqueado mientras dure la intervención.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Orden de mantenimiento creada exitosamente"),
@@ -75,23 +73,49 @@ public class MantenimientoController {
         }
     }
 
-    // PATCH /api/mantenimientos/{id}/finalizar - Finalizar mantenimiento y liberar recurso (RN-05)
+    @Operation(summary = "Actualizar orden de mantenimiento", description = "Actualiza el diagnóstico, responsable u observaciones de una orden abierta o en proceso.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Orden actualizada exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+            @ApiResponse(responseCode = "404", description = "Orden no encontrada"),
+            @ApiResponse(responseCode = "409", description = "La orden ya está cerrada")
+    })
+    @PutMapping("/{id}")
+    public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody MantenimientoDTO dto) {
+        try {
+            Mantenimiento actualizado = mantenimientoService.actualizar(id, dto);
+            if (actualizado == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "La orden de mantenimiento con ID " + id + " no existe."));
+            }
+            return ResponseEntity.ok(actualizado);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @Operation(summary = "Finalizar orden de mantenimiento", description = "Cierra la orden de mantenimiento con estado 'Finalizada' y actualiza automáticamente el recurso a 'Disponible' (RN-05).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Mantenimiento finalizado exitosamente y recurso liberado a Disponible"),
-            @ApiResponse(responseCode = "404", description = "Orden de mantenimiento no encontrada")
+            @ApiResponse(responseCode = "404", description = "Orden de mantenimiento no encontrada"),
+            @ApiResponse(responseCode = "409", description = "La orden ya estaba finalizada o cancelada")
     })
     @PatchMapping("/{id}/finalizar")
     public ResponseEntity<?> finalizar(@PathVariable Long id) {
-        Mantenimiento finalizado = mantenimientoService.finalizar(id);
-        if (finalizado == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "La orden de mantenimiento con ID " + id + " no existe."));
+        try {
+            Mantenimiento finalizado = mantenimientoService.finalizar(id);
+            if (finalizado == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "La orden de mantenimiento con ID " + id + " no existe."));
+            }
+            return ResponseEntity.ok(finalizado);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
         }
-        return ResponseEntity.ok(finalizado);
     }
 
-    // PATCH /api/mantenimientos/{id}/estado - Cambiar estado de la intervención
     @Operation(summary = "Cambiar estado de mantenimiento", description = "Cambia el estado de una orden abierta o en proceso a 'En proceso', 'Finalizada' o 'Cancelada'. 'Finalizada' aplica RN-05; 'Cancelada' cierra la orden y deja el recurso bloqueado hasta que el gestor lo habilite.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Estado actualizado"),
@@ -114,5 +138,19 @@ public class MantenimientoController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @Operation(summary = "Eliminar orden de mantenimiento", description = "Elimina una orden de mantenimiento por su ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Orden eliminada exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Orden no encontrada")
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> eliminar(@PathVariable Long id) {
+        if (!mantenimientoService.eliminar(id)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "La orden de mantenimiento con ID " + id + " no existe."));
+        }
+        return ResponseEntity.noContent().build();
     }
 }

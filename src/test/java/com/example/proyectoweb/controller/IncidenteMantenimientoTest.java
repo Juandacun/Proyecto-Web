@@ -3,6 +3,7 @@ package com.example.proyectoweb.controller;
 import com.example.proyectoweb.dto.IncidenteDTO;
 import com.example.proyectoweb.dto.MantenimientoDTO;
 import com.example.proyectoweb.model.Categoria;
+import com.example.proyectoweb.model.Incidente;
 import com.example.proyectoweb.model.Mantenimiento;
 import com.example.proyectoweb.model.Recurso;
 import com.example.proyectoweb.model.Ubicacion;
@@ -66,17 +67,56 @@ class IncidenteMantenimientoTest {
         return recursoService.guardar(r);
     }
 
+
     @Test
-    void testListarIncidentesDevuelveJsonYEstado200() throws Exception {
+    void testGetListarYBuscarIncidentePorId() throws Exception {
+        Recurso recurso = crearRecursoPrueba("Proyector Aula 101", "Disponible");
+        Incidente creado = incidenteService.registrarIncidente(
+                new IncidenteDTO(recurso.getIdRecurso(), "Falla de funcionamiento", "Media", "Lámpara parpadea", "docente01"));
+
         mockMvcIncidentes.perform(get("/api/incidentes")
+                        .param("recursoId", recurso.getIdRecurso().toString())
+                        .param("severidad", "Media")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", isA(java.util.List.class)));
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].idIncidente", is(creado.getIdIncidente().intValue())));
+
+        mockMvcIncidentes.perform(get("/api/incidentes/" + creado.getIdIncidente())
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.descripcion", is("Lámpara parpadea")));
+
+        mockMvcIncidentes.perform(get("/api/incidentes/999999"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void testRN04IncidenteCriticoBloqueaRecursoAutomaticamente() throws Exception {
+    void testGetListarYBuscarMantenimientoPorId() throws Exception {
+        Recurso recurso = crearRecursoPrueba("Router Laboratorio", "Bloqueado");
+        Mantenimiento orden = mantenimientoService.crearOrden(
+                new MantenimientoDTO(recurso.getIdRecurso(), "Actualización de firmware", "tecnico01"));
+
+        mockMvcMantenimientos.perform(get("/api/mantenimientos")
+                        .param("recursoId", recurso.getIdRecurso().toString())
+                        .param("estado", "Abierta")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].idMantenimiento", is(orden.getIdMantenimiento().intValue())));
+
+        mockMvcMantenimientos.perform(get("/api/mantenimientos/" + orden.getIdMantenimiento()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.diagnostico", is("Actualización de firmware")));
+
+        mockMvcMantenimientos.perform(get("/api/mantenimientos/999999"))
+                .andExpect(status().isNotFound());
+    }
+
+
+    @Test
+    void testPostRN04IncidenteCriticoBloqueaRecursoAutomaticamente() throws Exception {
         Recurso recurso = crearRecursoPrueba("Monitor Curvo 34", "Disponible");
 
         String jsonCritico = String.format("""
@@ -96,14 +136,13 @@ class IncidenteMantenimientoTest {
                 .andExpect(jsonPath("$.idIncidente", notNullValue()))
                 .andExpect(jsonPath("$.severidad", is("Crítica")));
 
-        // RN-04: Verificar que el recurso pasó automáticamente a 'Bloqueado'
         Recurso actualizado = recursoService.buscarPorId(recurso.getIdRecurso());
         assertEquals("Bloqueado", actualizado.getEstado());
         assertEquals("rojo", actualizado.getEstadoColor());
     }
 
     @Test
-    void testIncidenteLeveNoBloqueaRecurso() throws Exception {
+    void testPostIncidenteLeveNoBloqueaRecurso() throws Exception {
         Recurso recurso = crearRecursoPrueba("Teclado Mecánico", "Disponible");
 
         String jsonLeve = String.format("""
@@ -121,13 +160,12 @@ class IncidenteMantenimientoTest {
                         .content(jsonLeve))
                 .andExpect(status().isCreated());
 
-        // El recurso sigue en Disponible
         Recurso recursoSinCambio = recursoService.buscarPorId(recurso.getIdRecurso());
         assertEquals("Disponible", recursoSinCambio.getEstado());
     }
 
     @Test
-    void testCrearOrdenMantenimientoSobreRecursoBloqueado() throws Exception {
+    void testPostCrearOrdenMantenimientoSobreRecursoBloqueado() throws Exception {
         Recurso recurso = crearRecursoPrueba("Servidor de Prácticas", "Bloqueado");
 
         String jsonMantenimiento = String.format("""
@@ -148,29 +186,84 @@ class IncidenteMantenimientoTest {
                 .andExpect(jsonPath("$.diagnostico", is("Falla en fuente de poder redundante")));
     }
 
+
     @Test
-    void testRN05FinalizarMantenimientoLiberaRecursoADisponible() throws Exception {
+    void testPutActualizarIncidenteACriticoBloqueaRecursoRN04() throws Exception {
+        Recurso recurso = crearRecursoPrueba("Cámara DSLR Canon", "Disponible");
+        Incidente creado = incidenteService.registrarIncidente(
+                new IncidenteDTO(recurso.getIdRecurso(), "Daño físico", "Leve", "Rayón superficial", "est01"));
+        assertEquals("Disponible", recursoService.buscarPorId(recurso.getIdRecurso()).getEstado());
+
+        String jsonPut = """
+                {
+                    "tipoNovedad": "Daño físico",
+                    "severidad": "Crítica",
+                    "descripcion": "Lente interno fracturado tras revisión"
+                }
+                """;
+
+        mockMvcIncidentes.perform(put("/api/incidentes/" + creado.getIdIncidente())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonPut))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.severidad", is("Crítica")))
+                .andExpect(jsonPath("$.descripcion", is("Lente interno fracturado tras revisión")));
+
+        assertEquals("Bloqueado", recursoService.buscarPorId(recurso.getIdRecurso()).getEstado());
+    }
+
+    @Test
+    void testPutActualizarMantenimientoActivoYRechazarSiCerrado() throws Exception {
+        Recurso recurso = crearRecursoPrueba("Switch Cisco 24P", "Bloqueado");
+        Mantenimiento orden = mantenimientoService.crearOrden(
+                new MantenimientoDTO(recurso.getIdRecurso(), "Diagnóstico inicial", "tecnico01"));
+
+        String jsonUpdate = """
+                {
+                    "diagnostico": "Puertos 5 y 6 quemados, reemplazo de módulo",
+                    "idUsuarioResponsable": "tecnico02",
+                    "observaciones": "Repuesto instalado"
+                }
+                """;
+
+        mockMvcMantenimientos.perform(put("/api/mantenimientos/" + orden.getIdMantenimiento())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUpdate))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.diagnostico", is("Puertos 5 y 6 quemados, reemplazo de módulo")))
+                .andExpect(jsonPath("$.idUsuarioResponsable", is("tecnico02")));
+
+        mantenimientoService.finalizar(orden.getIdMantenimiento());
+        mockMvcMantenimientos.perform(put("/api/mantenimientos/" + orden.getIdMantenimiento())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUpdate))
+                .andExpect(status().isConflict());
+    }
+
+
+    @Test
+    void testPatchRN05FinalizarMantenimientoLiberaRecursoADisponible() throws Exception {
         Recurso recurso = crearRecursoPrueba("Impresora 3D", "Bloqueado");
 
-        // 1. Crear orden de mantenimiento
         MantenimientoDTO dto = new MantenimientoDTO(recurso.getIdRecurso(),
                 "Calibración de cabezal térmico", "tecnico.juan");
         Mantenimiento orden = mantenimientoService.crearOrden(dto);
 
-        // 2. Finalizar la intervención (RN-05)
         mockMvcMantenimientos.perform(patch("/api/mantenimientos/" + orden.getIdMantenimiento() + "/finalizar"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.idMantenimiento", is(orden.getIdMantenimiento().intValue())))
                 .andExpect(jsonPath("$.estado", is("Finalizada")))
                 .andExpect(jsonPath("$.fechaCierre", notNullValue()));
 
-        // RN-05: El recurso debe transicionar automáticamente a 'Disponible'
+        mockMvcMantenimientos.perform(patch("/api/mantenimientos/" + orden.getIdMantenimiento() + "/finalizar"))
+                .andExpect(status().isConflict());
+
         Recurso recursoLiberado = recursoService.buscarPorId(recurso.getIdRecurso());
         assertEquals("Disponible", recursoLiberado.getEstado());
     }
 
     @Test
-    void testCambiarEstadoMantenimientoAEnProcesoYCancelar() throws Exception {
+    void testPatchCambiarEstadoMantenimientoAEnProcesoYCancelar() throws Exception {
         Recurso recurso = crearRecursoPrueba("Osciloscopio digital", "Bloqueado");
         Mantenimiento orden = mantenimientoService.crearOrden(new MantenimientoDTO(recurso.getIdRecurso(),
                 "Revisión de sondas", "tecnico.ana"));
@@ -188,7 +281,6 @@ class IncidenteMantenimientoTest {
                 .andExpect(jsonPath("$.estado", is("Cancelada")))
                 .andExpect(jsonPath("$.fechaCierre", notNullValue()));
 
-        // Una orden cancelada no vuelve a cambiar de estado y el recurso sigue bloqueado
         mockMvcMantenimientos.perform(patch("/api/mantenimientos/" + orden.getIdMantenimiento() + "/estado")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"estado\":\"Finalizada\"}"))
@@ -197,7 +289,7 @@ class IncidenteMantenimientoTest {
     }
 
     @Test
-    void testCambiarEstadoMantenimientoInvalidoRetorna400() throws Exception {
+    void testPatchCambiarEstadoMantenimientoInvalidoRetorna400() throws Exception {
         Recurso recurso = crearRecursoPrueba("Fuente de poder", "Bloqueado");
         Mantenimiento orden = mantenimientoService.crearOrden(new MantenimientoDTO(recurso.getIdRecurso(),
                 "Cambio de fusible", "tecnico.ana"));
@@ -207,5 +299,28 @@ class IncidenteMantenimientoTest {
                         .content("{\"estado\":\"Pausada\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error", containsString("Estado no válido")));
+    }
+
+
+    @Test
+    void testDeleteEliminarIncidenteYMantenimiento() throws Exception {
+        Recurso recurso = crearRecursoPrueba("Micrófono Condensador", "Disponible");
+        Incidente incidente = incidenteService.registrarIncidente(
+                new IncidenteDTO(recurso.getIdRecurso(), "Accesorio faltante", "Leve", "Falta cable XLR", "est02"));
+
+        mockMvcIncidentes.perform(delete("/api/incidentes/" + incidente.getIdIncidente()))
+                .andExpect(status().isNoContent());
+
+        mockMvcIncidentes.perform(get("/api/incidentes/" + incidente.getIdIncidente()))
+                .andExpect(status().isNotFound());
+
+        Mantenimiento orden = mantenimientoService.crearOrden(
+                new MantenimientoDTO(recurso.getIdRecurso(), "Revisión de cápsula", "tecnico03"));
+
+        mockMvcMantenimientos.perform(delete("/api/mantenimientos/" + orden.getIdMantenimiento()))
+                .andExpect(status().isNoContent());
+
+        mockMvcMantenimientos.perform(get("/api/mantenimientos/" + orden.getIdMantenimiento()))
+                .andExpect(status().isNotFound());
     }
 }
