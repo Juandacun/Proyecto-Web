@@ -8,10 +8,6 @@ export interface Notificacion {
   tipo: TipoNotificacion;
 }
 
-/**
- * Mensajes globales de la aplicación (por ejemplo, 403 en una operación).
- * Se muestran en el layout principal y se ocultan solos.
- */
 @Injectable({ providedIn: 'root' })
 export class NotificacionService {
   private readonly _actual = signal<Notificacion | null>(null);

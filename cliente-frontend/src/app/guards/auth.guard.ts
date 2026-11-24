@@ -4,10 +4,6 @@ import { map } from 'rxjs';
 
 import { AuthService } from '../services/auth';
 
-/**
- * AuthGuard (funcional): exige una sesión válida confirmada por el backend (GET /api/usuarios/me).
- * Si no hay sesión, redirige al login conservando la ruta solicitada.
- */
 export const authGuard: CanActivateFn = (_route, state) => {
   const auth = inject(AuthService);
   const router = inject(Router);

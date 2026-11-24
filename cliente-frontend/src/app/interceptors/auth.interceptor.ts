@@ -9,14 +9,6 @@ import { NotificacionService } from '../services/notificacion';
 
 const MENSAJE_403 = 'Acceso denegado: tu rol no tiene permiso para realizar esta operación.';
 
-/**
- * Interceptor JWT.
- * - Adjunta "Authorization: Bearer <token>" solo a peticiones dirigidas al backend de CampusRecursos.
- * - Nunca adjunta el token al endpoint de login ni a dominios externos.
- * - 401 en una petición protegida: limpia la sesión y redirige al login.
- * - 401 en el login: no hace nada (el formulario muestra "credenciales incorrectas").
- * - 403: conserva la sesión y el JWT; muestra un mensaje de acceso denegado.
- */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const router = inject(Router);

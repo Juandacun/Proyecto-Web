@@ -29,11 +29,7 @@ export interface UsuarioNuevo {
   rol: Rol;
 }
 
-/**
- * Cuerpo para PUT /api/usuarios/{id}.
- * Debe incluir el rol actual: si se omite, la entidad Usuario del backend lo inicializa en
- * ROLE_USER y el PUT degradaría al usuario. El cambio de rol se hace solo con PATCH /{id}/rol.
- */
+// Incluye el rol actual: si se omite, el backend deja al usuario en ROLE_USER.
 export interface UsuarioEdicion {
   nombre: string;
   tipo: string;

@@ -9,14 +9,6 @@ import { AccesoDenegadoComponent } from './components/acceso-denegado/acceso-den
 import { authGuard, invitadoGuard } from './guards/auth.guard';
 import { roleGuard } from './guards/role.guard';
 
-/**
- * Rutas protegidas por rol. La visibilidad en la SPA es solo de navegación:
- * Spring Security valida cada endpoint en el servidor.
- *
- * - ROLE_USER:   catálogo, reservas y préstamos personales, reporte de incidentes.
- * - ROLE_GESTOR: lo anterior + gestión operativa y tablero.
- * - ROLE_ADMIN:  lo del gestor + administración de usuarios y roles.
- */
 export const routes: Routes = [
   { path: '', redirectTo: 'catalogo', pathMatch: 'full' },
   { path: 'login', component: LoginComponent, canActivate: [invitadoGuard], title: 'Iniciar sesión · CampusRecursos' },

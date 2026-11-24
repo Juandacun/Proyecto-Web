@@ -16,10 +16,6 @@ export const ETIQUETAS_ROL: Record<Rol, string> = {
   ROLE_ADMIN: 'Administrador'
 };
 
-/**
- * Cuerpo devuelto por POST /login (JwtAuthenticationFilter.successfulAuthentication).
- * Todos los campos se tratan como opcionales: el token oficial viaja en la cabecera Authorization.
- */
 export interface LoginRespuesta {
   token?: string;
   type?: string;
@@ -47,10 +43,6 @@ export interface UsuarioAutenticado {
   rol: string;
 }
 
-/**
- * Permite que una petición maneje su propio 401 sin que el interceptor redirija al login
- * (lo usa la verificación de sesión, cuya redirección la decide el guard).
- */
 export const OMITIR_REDIRECCION_401 = new HttpContextToken<boolean>(() => false);
 
 const CLAVE_TOKEN = 'campusrecursos.token';
@@ -70,12 +62,6 @@ export function etiquetaRol(rol: string | null | undefined): string {
   return r ? ETIQUETAS_ROL[r] : 'Sin rol';
 }
 
-/**
- * Servicio de autenticación de la SPA.
- * - El backend es la fuente oficial de autenticación y autorización.
- * - Solo se persiste el JWT (sessionStorage); nunca la contraseña ni el rol.
- * - El rol vigente se obtiene siempre de GET /api/usuarios/me.
- */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
@@ -112,10 +98,6 @@ export class AuthService {
       );
   }
 
-  /**
-   * Confirma con el backend que la sesión sigue siendo válida y actualiza el rol vigente.
-   * Reutiliza el resultado durante unos segundos para no consultar /me en cada navegación.
-   */
   verificarSesion(forzar = false): Observable<boolean> {
     const token = this._token();
     if (!token) return of(false);
@@ -136,8 +118,7 @@ export class AuthService {
             this.limpiarSesion();
             return of(false);
           }
-          // Backend no disponible u otro error: se conserva el token y, si ya había un perfil
-          // validado, se mantiene; el backend seguirá rechazando cualquier petición no autorizada.
+          // Backend no disponible: se conserva la sesión si ya había un perfil validado.
           return of(!!this._usuario());
         }),
         finalize(() => (this.verificacionEnCurso = null)),

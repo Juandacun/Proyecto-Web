@@ -1,7 +1,3 @@
-/**
- * Configuración del backend de CampusRecursos.
- * El token JWT solo se adjunta a peticiones cuyo origen coincida con API_BASE_URL.
- */
 export const API_BASE_URL = 'http://localhost:8080';
 
 /** Endpoint de autenticación expuesto por JwtAuthenticationFilter. */
