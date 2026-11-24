@@ -30,7 +30,7 @@ public class Usuario {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "varchar(255) default 'ROLE_USER'")
     private String rol = "ROLE_USER"; // ROLE_USER, ROLE_GESTOR, ROLE_ADMIN
 
     public Usuario() {
