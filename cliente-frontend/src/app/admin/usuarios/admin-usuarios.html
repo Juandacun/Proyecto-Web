@@ -1,0 +1,239 @@
+<section class="admin">
+  <div class="page-header">
+    <div>
+      <h1>Usuarios y roles</h1>
+      <p class="sub">Administra las cuentas de acceso y asigna los roles Solicitante, Gestor o Administrador.</p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="abrirCrear()">+ Nuevo usuario</button>
+  </div>
+
+  @if (mensaje(); as m) {
+    <div class="alert" [class.alert-exito]="m.tipo === 'exito'" [class.alert-error]="m.tipo === 'error'" role="status">
+      <span>{{ m.texto }}</span>
+      <button type="button" class="alert-close" (click)="cerrarMensaje()" aria-label="Cerrar">×</button>
+    </div>
+  }
+
+  <div class="chips" role="tablist" aria-label="Filtrar por rol">
+    <button type="button" class="chip" [class.active]="filtroRol() === 'TODOS'" (click)="cambiarFiltroRol('TODOS')">
+      Todos <span class="count">{{ conteos().TODOS }}</span>
+    </button>
+    @for (rol of roles; track rol) {
+      <button type="button" class="chip" [class.active]="filtroRol() === rol" (click)="cambiarFiltroRol(rol)">
+        {{ etiquetas[rol] }} <span class="count">{{ conteos()[rol] }}</span>
+      </button>
+    }
+  </div>
+
+  <div class="toolbar">
+    <input
+      type="search"
+      class="search"
+      placeholder="Buscar por nombre, usuario, código, correo o documento"
+      [ngModel]="busqueda()"
+      (ngModelChange)="busqueda.set($event)"
+      aria-label="Buscar usuarios"
+    />
+    <button type="button" class="btn btn-secondary" (click)="cargar()" [disabled]="cargando()">Actualizar</button>
+  </div>
+
+  <div class="card">
+    @if (cargando() && usuarios().length === 0) {
+      <div class="estado">Cargando usuarios…</div>
+    } @else if (errorCarga()) {
+      <div class="estado estado-error">
+        {{ errorCarga() }}
+        <button type="button" class="btn btn-secondary" (click)="cargar()">Reintentar</button>
+      </div>
+    } @else if (visibles().length === 0) {
+      <div class="estado">No hay usuarios que coincidan con la búsqueda.</div>
+    } @else {
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Usuario</th>
+            <th>Código</th>
+            <th>Tipo</th>
+            <th>Rol</th>
+            <th class="acciones-col">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of visibles(); track u.idUsuario) {
+            <tr>
+              <td data-label="Nombre">
+                <div class="nombre">
+                  {{ u.nombre }}
+                  @if (esPropio(u)) { <span class="tu">Tú</span> }
+                </div>
+                @if (u.email) { <div class="email">{{ u.email }}</div> }
+              </td>
+              <td data-label="Usuario">{{ u.username }}</td>
+              <td data-label="Código">{{ u.codigo }}</td>
+              <td data-label="Tipo">{{ u.tipo }}</td>
+              <td data-label="Rol"><span [class]="claseRol(u.rol)">{{ etiquetaRol(u.rol) }}</span></td>
+              <td class="acciones">
+                <button type="button" class="link" (click)="verDetalle(u)">Ver</button>
+                <button type="button" class="link" (click)="abrirEditar(u)">Editar</button>
+                <button
+                  type="button"
+                  class="link"
+                  (click)="abrirCambioRol(u)"
+                  [disabled]="esPropio(u)"
+                  [attr.title]="esPropio(u) ? 'No puedes cambiar tu propio rol' : null"
+                >Cambiar rol</button>
+                <button
+                  type="button"
+                  class="link link-danger"
+                  (click)="abrirEliminar(u)"
+                  [disabled]="esPropio(u)"
+                  [attr.title]="esPropio(u) ? 'No puedes eliminar tu propia cuenta' : null"
+                >Eliminar</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</section>
+
+<!-- ===== Modales ===== -->
+@if (modal() !== 'ninguno') {
+  <div class="overlay" (click)="cerrarModal()">
+    <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+
+      <!-- Detalle -->
+      @if (modal() === 'detalle') {
+        <h2>Detalle del usuario</h2>
+        @if (cargandoDetalle()) {
+          <p class="muted">Consultando…</p>
+        }
+        @if (seleccionado(); as u) {
+          <dl class="detalle">
+            <dt>Nombre</dt><dd>{{ u.nombre }}</dd>
+            <dt>Usuario de acceso</dt><dd>{{ u.username }}</dd>
+            <dt>Código</dt><dd>{{ u.codigo }}</dd>
+            <dt>Tipo</dt><dd>{{ u.tipo }}</dd>
+            <dt>Documento</dt><dd>{{ u.documento || '—' }}</dd>
+            <dt>Correo</dt><dd>{{ u.email || '—' }}</dd>
+            <dt>Rol</dt><dd><span [class]="claseRol(u.rol)">{{ etiquetaRol(u.rol) }}</span></dd>
+          </dl>
+        }
+        @if (errorModal()) { <div class="alert alert-error">{{ errorModal() }}</div> }
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cerrar</button>
+        </div>
+      }
+
+      <!-- Crear / editar -->
+      @if (modal() === 'formulario') {
+        <h2>{{ modo() === 'crear' ? 'Nuevo usuario' : 'Editar usuario' }}</h2>
+        <form (ngSubmit)="guardar()" novalidate class="form">
+          <div class="grid">
+            <label class="full">Nombre completo *
+              <input name="nombre" [(ngModel)]="form.nombre" maxlength="120" required />
+            </label>
+            <label>Código institucional *
+              <input name="codigo" [(ngModel)]="form.codigo" placeholder="EST-202501" required />
+            </label>
+            <label>Tipo *
+              <select name="tipo" [(ngModel)]="form.tipo">
+                @for (t of tipos; track t) { <option [value]="t">{{ t }}</option> }
+              </select>
+            </label>
+            <label>Documento
+              <input name="documento" [(ngModel)]="form.documento" />
+            </label>
+            <label>Correo
+              <input name="email" type="email" [(ngModel)]="form.email" placeholder="nombre@universidad.edu.co" />
+            </label>
+            <label class="full">Usuario de acceso
+              <input
+                name="username"
+                [(ngModel)]="form.username"
+                [disabled]="modo() === 'editar' && esPropio(seleccionado())"
+                placeholder="Si se deja vacío se usa el código"
+                autocomplete="off"
+              />
+              @if (modo() === 'editar' && esPropio(seleccionado())) {
+                <small>No puedes cambiar tu propio usuario de acceso mientras tienes la sesión abierta.</small>
+              }
+            </label>
+            <label>{{ modo() === 'crear' ? 'Contraseña *' : 'Nueva contraseña' }}
+              <input name="password" type="password" [(ngModel)]="form.password" autocomplete="new-password" />
+              @if (modo() === 'editar') { <small>Déjala vacía para conservar la actual.</small> }
+            </label>
+            <label>Confirmar contraseña
+              <input name="confirmarPassword" type="password" [(ngModel)]="form.confirmarPassword" autocomplete="new-password" />
+            </label>
+            @if (modo() === 'crear') {
+              <label class="full">Rol inicial *
+                <select name="rol" [(ngModel)]="form.rol">
+                  @for (r of roles; track r) { <option [value]="r">{{ etiquetas[r] }}</option> }
+                </select>
+                <small>{{ descripciones[form.rol] }}</small>
+              </label>
+            } @else if (seleccionado(); as u) {
+              <div class="full rol-actual">
+                Rol actual: <span [class]="claseRol(u.rol)">{{ etiquetaRol(u.rol) }}</span>
+                <small>El rol se modifica con la acción "Cambiar rol".</small>
+              </div>
+            }
+          </div>
+
+          @if (errorModal()) { <div class="alert alert-error">{{ errorModal() }}</div> }
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" (click)="cerrarModal()" [disabled]="guardando()">Cancelar</button>
+            <button type="submit" class="btn btn-primary" [disabled]="guardando()">
+              {{ guardando() ? 'Guardando…' : (modo() === 'crear' ? 'Crear usuario' : 'Guardar cambios') }}
+            </button>
+          </div>
+        </form>
+      }
+
+      <!-- Cambiar rol -->
+      @if (modal() === 'rol') {
+        @if (seleccionado(); as u) {
+          <h2>Cambiar rol</h2>
+          <p class="muted">{{ u.nombre }} · rol actual: <span [class]="claseRol(u.rol)">{{ etiquetaRol(u.rol) }}</span></p>
+          <div class="roles">
+            @for (r of roles; track r) {
+              <label class="rol-opcion" [class.selected]="rolNuevo === r">
+                <input type="radio" name="rolNuevo" [value]="r" [(ngModel)]="rolNuevo" />
+                <span>
+                  <strong>{{ etiquetas[r] }}</strong>
+                  <small>{{ descripciones[r] }}</small>
+                </span>
+              </label>
+            }
+          </div>
+          @if (errorModal()) { <div class="alert alert-error">{{ errorModal() }}</div> }
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" (click)="cerrarModal()" [disabled]="guardando()">Cancelar</button>
+            <button type="button" class="btn btn-primary" (click)="confirmarCambioRol()" [disabled]="guardando()">
+              {{ guardando() ? 'Guardando…' : 'Asignar rol' }}
+            </button>
+          </div>
+        }
+      }
+
+      <!-- Eliminar -->
+      @if (modal() === 'eliminar') {
+        @if (seleccionado(); as u) {
+          <h2>Eliminar usuario</h2>
+          <p>¿Seguro que deseas eliminar a <strong>{{ u.nombre }}</strong> ({{ u.username }})? Esta acción no se puede deshacer.</p>
+          @if (errorModal()) { <div class="alert alert-error">{{ errorModal() }}</div> }
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" (click)="cerrarModal()" [disabled]="guardando()">Cancelar</button>
+            <button type="button" class="btn btn-danger" (click)="confirmarEliminar()" [disabled]="guardando()">
+              {{ guardando() ? 'Eliminando…' : 'Eliminar' }}
+            </button>
+          </div>
+        }
+      }
+    </div>
+  </div>
+}

@@ -9,16 +9,30 @@
 .nav-item:hover { background: #1E293B; color: #CBD5E1; }
 .nav-item.is-active,
 .nav-item.active { background: #2563EB; color: #fff; }
+.nav-section { margin: 16px 12px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #64748B; }
 
 /* Main */
 .main { display: flex; flex-direction: column; flex: 1; min-width: 0; background: #F1F5F9; }
 .topbar { display: flex; justify-content: space-between; align-items: center; height: 72px; padding: 0 32px; background: #fff; border-bottom: 1px solid #E2E8F0; }
 .screen-title { font-weight: 600; font-size: 18px; line-height: 22px; color: #0F172A; }
 .right-group { display: flex; align-items: center; gap: 12px; }
+.user-name { font-weight: 500; font-size: 13px; color: #0F172A; }
 .role-pill { display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: #F1F5F9; border-radius: 999px; }
 .role-text { font-weight: 500; font-size: 12px; line-height: 15px; color: #334155; }
 .caret { font-size: 11px; line-height: 13px; color: #64748B; }
 .avatar { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 999px; background: #2563EB; color: #fff; font-weight: 600; font-size: 12px; }
+.logout { padding: 8px 12px; border: 1px solid #E2E8F0; border-radius: 6px; background: #fff; color: #334155; font-size: 12px; font-weight: 500; cursor: pointer; }
+.logout:hover { background: #FEF2F2; border-color: #FECACA; color: #B91C1C; }
+
+/* Avisos globales (por ejemplo, 403 en una operación) */
+.toast { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 16px 32px 0; padding: 10px 14px; border-radius: 8px; font-size: 13px; line-height: 18px; }
+.toast-error { background: #FEF2F2; border: 1px solid #FECACA; color: #B91C1C; }
+.toast-exito { background: #F0FDF4; border: 1px solid #BBF7D0; color: #15803D; }
+.toast-info { background: #EFF6FF; border: 1px solid #BFDBFE; color: #1D4ED8; }
+.toast-close { border: none; background: transparent; color: inherit; font-size: 18px; line-height: 1; cursor: pointer; }
+
+/* Vista pública (login): sin menú ni barra superior */
+.layout-publico .main { background: #F1F5F9; }
 
 /* Responsive: en teléfono el menú lateral pasa a una barra superior desplazable */
 @media (max-width: 760px) {
@@ -27,6 +41,9 @@
   .brand-sub, .spacer { display: none; }
   .brand { margin-right: 8px; white-space: nowrap; }
   .nav-item { flex: none; align-self: auto; white-space: nowrap; }
+  .nav-section { margin: 0 4px; white-space: nowrap; }
   .topbar { height: 56px; padding: 0 16px; }
   .screen-title { font-size: 16px; }
+  .user-name { display: none; }
+  .toast { margin: 12px 16px 0; }
 }
