@@ -50,14 +50,14 @@ public class UsuarioService {
         }
 
         // Carga idempotente y segura de usuarios de prueba para desarrollo y testing
-        crearOActualizarUsuario("user", "user123", "Juan Pérez (Estudiante)", "Estudiante",
-                "EST-202410", "1098765432", "user@campus.edu.co", "ROLE_USER");
+        crearOActualizarUsuario("user", "user123", "Juan Pérez", "Estudiante",
+                "EST-202410", "1098765432", "juan.perez@universidad.edu.co", "ROLE_USER");
 
-        crearOActualizarUsuario("gestor", "gestor123", "Carlos Rodríguez (Gestor)", "Administrativo",
-                "GES-3001", "79845612", "gestor@campus.edu.co", "ROLE_GESTOR");
+        crearOActualizarUsuario("gestor", "gestor123", "Carlos Rodríguez", "Investigador",
+                "INV-309112", "79845612", "carlos.rodriguez@universidad.edu.co", "ROLE_GESTOR");
 
-        crearOActualizarUsuario("admin", "admin123", "Ing. Ana Torres (Administrador)", "Administrativo",
-                "ADM-401928", "63901234", "admin@campus.edu.co", "ROLE_ADMIN");
+        crearOActualizarUsuario("admin", "admin123", "Ing. Ana Torres", "Administrativo",
+                "ADM-401928", "63901234", "ana.torres@universidad.edu.co", "ROLE_ADMIN");
 
         // Otros usuarios institucionales para compatibilidad con datos iniciales
         crearOActualizarUsuario("docente", "docente123", "Dra. María Gómez", "Docente",
@@ -74,24 +74,35 @@ public class UsuarioService {
                                          String tipo, String codigo, String documento,
                                          String email, String rol) {
         Optional<Usuario> existente = repository.findByLoginIdentifier(username)
-                .or(() -> repository.findByCodigo(codigo));
+                .or(() -> repository.findByCodigo(codigo))
+                .or(() -> repository.findByDocumento(documento));
 
         if (existente.isPresent()) {
             Usuario u = existente.get();
             boolean modificado = false;
-            // Solo autocompletar campos faltantes. JAMÁS sobrescribir contraseñas ni roles ya definidos
-            if (u.getUsername() == null || u.getUsername().isBlank()) {
+            boolean esUsuarioLegacySinSeguridad = (u.getPassword() == null || u.getPassword().isBlank());
+
+            // 1. Asignar username institucional de acceso si no ha sido configurado
+            if (u.getUsername() == null || u.getUsername().isBlank() || u.getUsername().equalsIgnoreCase(u.getCodigo())) {
                 u.setUsername(username);
                 modificado = true;
             }
-            if (u.getPassword() == null || u.getPassword().isBlank()) {
+
+            // 2. Asignación inicial de credenciales y rol para registros legacy
+            if (esUsuarioLegacySinSeguridad) {
                 u.setPassword(passwordEncoder.encode(rawPassword));
+
+                // Asignación controlada: roles privilegiados solo para registros identificados
+                if ("ROLE_ADMIN".equals(rol) && "ADM-401928".equals(u.getCodigo())) {
+                    u.setRol("ROLE_ADMIN");
+                } else if ("ROLE_GESTOR".equals(rol) && "INV-309112".equals(u.getCodigo())) {
+                    u.setRol("ROLE_GESTOR");
+                } else if (u.getRol() == null || u.getRol().isBlank()) {
+                    u.setRol("ROLE_USER");
+                }
                 modificado = true;
             }
-            if (u.getRol() == null || u.getRol().isBlank()) {
-                u.setRol(rol);
-                modificado = true;
-            }
+
             if (modificado) {
                 repository.save(u);
             }
