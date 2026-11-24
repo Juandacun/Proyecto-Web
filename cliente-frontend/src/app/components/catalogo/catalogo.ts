@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { RecursoService } from '../../services/recurso';
 import { CategoriaService, Categoria } from '../../services/categoria';
@@ -36,14 +37,15 @@ export class CatalogoComponent implements OnInit {
     private recursoService: RecursoService,
     private categoriaService: CategoriaService,
     private ubicacionService: UbicacionService,
-    private reservaService: ReservaService
+    private reservaService: ReservaService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    this.categoriaService.listar().subscribe({ next: (data) => (this.categorias = data) });
-    this.ubicacionService.listar().subscribe({ next: (data) => (this.ubicaciones = data) });
+    this.categoriaService.listar().pipe(finalize(() => this.cdr.markForCheck())).subscribe({ next: (data) => (this.categorias = data) });
+    this.ubicacionService.listar().pipe(finalize(() => this.cdr.markForCheck())).subscribe({ next: (data) => (this.ubicaciones = data) });
     // Los tipos se toman del catálogo completo para que no desaparezcan al filtrar
-    this.recursoService.listar().subscribe({
+    this.recursoService.listar().pipe(finalize(() => this.cdr.markForCheck())).subscribe({
       next: (data) => {
         this.tipos = [...new Set(data.map((r) => r.tipo).filter((t) => !!t))].sort();
       }
@@ -69,7 +71,7 @@ export class CatalogoComponent implements OnInit {
       filtros.tipo = this.tipoSeleccionado;
     }
 
-    this.recursoService.obtenerRecursos(filtros).subscribe({
+    this.recursoService.obtenerRecursos(filtros).pipe(finalize(() => this.cdr.markForCheck())).subscribe({
       next: (data) => {
         this.recursos = data;
       }
@@ -117,7 +119,7 @@ export class CatalogoComponent implements OnInit {
 
     this.cargandoReservas = true;
     const hoy = new Date().toISOString().slice(0, 10);
-    this.reservaService.listar({ recursoId: recurso.idRecurso, estado: 'Confirmada' }).subscribe({
+    this.reservaService.listar({ recursoId: recurso.idRecurso, estado: 'Confirmada' }).pipe(finalize(() => this.cdr.markForCheck())).subscribe({
       next: (data) => {
         this.proximasReservas = data.filter((r) => r.fecha >= hoy);
         this.cargandoReservas = false;

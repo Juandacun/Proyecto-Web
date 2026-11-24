@@ -1,11 +1,11 @@
 /* Estilos de Incidentes y Mantenimiento consistentes con catalogo.css */
-.content { display: flex; flex-direction: column; gap: 24px; padding: 32px; }
+.content { display: flex; flex-direction: column; gap: 24px; padding: 32px; min-width: 0; }
 .intro { max-width: 640px; }
 .intro h1 { margin: 0; font-weight: 700; font-size: 26px; line-height: 31px; color: #0F172A; }
 .intro h2 { margin: 0; font-weight: 700; font-size: 18px; line-height: 22px; color: #0F172A; }
 .intro p { margin: 6px 0 0; font-size: 13px; line-height: 20px; color: #475569; }
 
-.page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; align-self: stretch; }
+.page-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 16px 24px; align-self: stretch; }
 .page-head--center { align-items: center; }
 .intro--tight h1 { font-size: 24px; line-height: 29px; }
 .intro--tight p { margin-top: 4px; font-size: 13px; line-height: 16px; color: #64748B; }
@@ -24,7 +24,7 @@
 .btn--texto-rojo:hover { color: #B91C1C; }
 .acciones-orden { display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 
-.card { background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; }
+.card { background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; overflow-x: auto; }
 .card--pad { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
 .card__title { margin: 0; font-weight: 600; font-size: 16px; line-height: 20px; color: #0F172A; }
 .card__note { margin: 0; font-size: 13px; line-height: 18px; color: #475569; }
