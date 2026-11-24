@@ -74,6 +74,25 @@ Abrir `http://localhost:4200`. La SPA consume la API en `http://localhost:8080/a
 
 Pruebas de controladores con MockMvc sobre H2 en memoria (`src/test/`): recursos, reservas, préstamos, incidentes/mantenimiento, indicadores y categorías/ubicaciones.
 
+#### Pruebas de sistema (E2E) y QA responsivo
+
+Pruebas con [Playwright para Java](https://playwright.dev/java/) (`src/test/java/.../e2e/`), que manejan Chromium contra la SPA y el backend reales. No se ejecutan con `./mvnw test`; se lanzan con:
+
+```bash
+./e2e/run-e2e.sh                       # todas
+./e2e/run-e2e.sh FlujoCriticoE2ETest   # una clase
+E2E_HEADED=1 E2E_SLOWMO=800 ./e2e/run-e2e.sh FlujoCriticoE2ETest   # ver el navegador
+```
+
+El script levanta el backend con una H2 **en memoria y limpia** y la SPA (`ng serve`), ejecuta `./mvnw -Pe2e test` y los detiene al terminar. Si ya hay servicios en `:8080`/`:4200` los reutiliza (la BD puede no estar limpia). Capturas de cada prueba en `target/e2e-screenshots/`. En la primera ejecución Playwright descarga los navegadores.
+
+| Clase | Qué cubre |
+|-------|-----------|
+| `FlujoCriticoE2ETest` | **Prueba de sistema del caso de uso más largo** (HU-008, 009, 006, 007, 010): incidente crítico → recurso bloqueado (RN-04) → mantenimiento abrir/iniciar/finalizar (RN-05) → entrega (RN-03) → devolución puntual → tablero |
+| `ReservasE2ETest` | Crear reserva, conflicto de horario (RN-01), cancelar, recurso bloqueado (RN-02) |
+| `SeguridadRolesE2ETest` | Login válido/inválido, rutas protegidas y restricciones por rol (HU-011) |
+| `ResponsivoE2ETest` | QA responsivo en 320, 375, 414, 768, 1280 y 1920 px: sin desbordamiento horizontal en cada vista, login, navegación accesible y modal de entrega dentro del viewport |
+
 ## Módulos de la SPA
 
 | Ruta | Componente | Funcionalidad |
