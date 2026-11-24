@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs';
 import { IndicadorService, Indicadores, FilaRecurso } from '../../services/indicador';
 
 @Component({
@@ -19,7 +20,10 @@ export class TableroComponent implements OnInit {
   estadoSeleccionado = '';
   readonly estados = ['Disponible', 'Reservado', 'Prestado', 'Bloqueado'];
 
-  constructor(private indicadorService: IndicadorService) {}
+  constructor(
+    private indicadorService: IndicadorService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.cargar();
@@ -28,7 +32,7 @@ export class TableroComponent implements OnInit {
   cargar(): void {
     this.cargando = true;
     this.mensajeError = null;
-    this.indicadorService.obtener().subscribe({
+    this.indicadorService.obtener().pipe(finalize(() => this.cdr.markForCheck())).subscribe({
       next: (data) => {
         this.indicadores = data;
         this.cargando = false;
