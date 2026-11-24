@@ -1,6 +1,5 @@
 package com.example.proyectoweb.controller;
 
-import com.example.proyectoweb.dto.PrestamoDevolucionDTO;
 import com.example.proyectoweb.dto.PrestamoEntregaDTO;
 import com.example.proyectoweb.model.Categoria;
 import com.example.proyectoweb.model.Prestamo;
@@ -21,6 +20,7 @@ import java.time.LocalDate;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -55,13 +55,18 @@ class PrestamoControllerTest {
         Ubicacion ubi = new Ubicacion();
         ubi.setIdUbicacion(1L);
         r.setUbicacion(ubi);
-        return recursoService.guardar(r);
+        Recurso guardado = recursoService.guardar(r);
+        System.out.println("[TEST SETUP] Creado recurso id=" + guardado.getIdRecurso()
+                + " | nombre=" + guardado.getNombre() + " | estado=" + guardado.getEstado());
+        return guardado;
     }
 
     @Test
     void testListarPrestamosDevuelveJsonYEstado200() throws Exception {
+        System.out.println("=== TEST: Listar préstamos (200) ===");
         mockMvc.perform(get("/api/prestamos")
                         .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$", isA(java.util.List.class)));
@@ -69,6 +74,7 @@ class PrestamoControllerTest {
 
     @Test
     void testRegistrarEntregaValidaYTransicionEstadoRecurso() throws Exception {
+        System.out.println("=== TEST: Entrega válida y transición a Prestado ===");
         Recurso equipo = crearEquipoPrueba("Laptop Lenovo ThinkPad", "Disponible");
 
         String jsonEntrega = String.format("""
@@ -86,19 +92,22 @@ class PrestamoControllerTest {
         mockMvc.perform(post("/api/prestamos/entrega")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonEntrega))
+                .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.idPrestamo", notNullValue()))
                 .andExpect(jsonPath("$.estado", is("Prestado")))
                 .andExpect(jsonPath("$.documento", is("1019283746")))
                 .andExpect(jsonPath("$.accesorios", is("Cargador 65W, Cable HDMI")));
 
-        // Verificar que el estado del recurso transicionó a 'Prestado'
         Recurso recursoActualizado = recursoService.buscarPorId(equipo.getIdRecurso());
+        System.out.println("[OUTPUT] Estado actualizado del recurso " + recursoActualizado.getIdRecurso()
+                + ": " + recursoActualizado.getEstado());
         org.junit.jupiter.api.Assertions.assertEquals("Prestado", recursoActualizado.getEstado());
     }
 
     @Test
     void testRN02RecursoBloqueadoNoSePuedePrestarRetorna409Conflict() throws Exception {
+        System.out.println("=== TEST: RN-02 Recurso bloqueado retorna 409 ===");
         Recurso equipoBloqueado = crearEquipoPrueba("Proyector Dañado", "Bloqueado");
 
         String jsonEntrega = String.format("""
@@ -113,6 +122,7 @@ class PrestamoControllerTest {
         mockMvc.perform(post("/api/prestamos/entrega")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonEntrega))
+                .andDo(print())
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.codigo", is("RN-02")))
                 .andExpect(jsonPath("$.error", containsString("bloqueado por daño o mantenimiento")));
@@ -120,15 +130,15 @@ class PrestamoControllerTest {
 
     @Test
     void testRN03RecursoYaPrestadoNoSePuedeEntregarNuevamenteRetorna409Conflict() throws Exception {
+        System.out.println("=== TEST: RN-03 Recurso ya prestado retorna 409 ===");
         Recurso equipo = crearEquipoPrueba("Tablet iPad Pro", "Disponible");
 
-        // 1. Primer préstamo exitoso
         PrestamoEntregaDTO primerPrestamo = new PrestamoEntregaDTO(
                 equipo.getIdRecurso(), "111222333", LocalDate.now().plusDays(5),
                 "Bueno", "Primer préstamo", "Funda");
-        prestamoService.registrarEntrega(primerPrestamo);
+        Prestamo p1 = prestamoService.registrarEntrega(primerPrestamo);
+        System.out.println("[OUTPUT] Primer préstamo creado id=" + p1.getIdPrestamo() + " | estado=" + p1.getEstado());
 
-        // 2. Intentar entregar el mismo recurso mientras sigue en préstamo (RN-03)
         String jsonSegundoPrestamo = String.format("""
                 {
                     "recursoId": %d,
@@ -141,6 +151,7 @@ class PrestamoControllerTest {
         mockMvc.perform(post("/api/prestamos/entrega")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonSegundoPrestamo))
+                .andDo(print())
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.codigo", is("RN-03")))
                 .andExpect(jsonPath("$.error", containsString("ya figura en estado Prestado")));
@@ -148,7 +159,7 @@ class PrestamoControllerTest {
 
     @Test
     void testNoPrestarEspaciosRetorna400BadRequest() throws Exception {
-        // Recurso 2 es Salón 201 (ESPACIO)
+        System.out.println("=== TEST: No prestar espacios retorna 400 ===");
         String jsonEspacio = String.format("""
                 {
                     "recursoId": 2,
@@ -160,18 +171,21 @@ class PrestamoControllerTest {
         mockMvc.perform(post("/api/prestamos/entrega")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonEspacio))
+                .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error", containsString("Solo se pueden prestar recursos de tipo EQUIPO")));
     }
 
     @Test
     void testRegistrarDevolucionPuntualYRecursoQuedaDisponible() throws Exception {
+        System.out.println("=== TEST: Devolución puntual y liberación de recurso ===");
         Recurso equipo = crearEquipoPrueba("Cámara Fotográfica Canon", "Disponible");
 
         PrestamoEntregaDTO entrega = new PrestamoEntregaDTO(
                 equipo.getIdRecurso(), "555666777", LocalDate.now().plusDays(5),
                 "Bueno", "Entrega", "Lente 50mm");
         Prestamo guardado = prestamoService.registrarEntrega(entrega);
+        System.out.println("[OUTPUT] Préstamo inicial id=" + guardado.getIdPrestamo());
 
         String jsonDevolucion = """
                 {
@@ -184,27 +198,29 @@ class PrestamoControllerTest {
         mockMvc.perform(patch("/api/prestamos/" + guardado.getIdPrestamo() + "/devolucion")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonDevolucion))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado", is("Devuelto")))
                 .andExpect(jsonPath("$.puntualidad", is("Puntual")));
 
-        // Verificar que el recurso quedó Disponible
         Recurso recursoLiberado = recursoService.buscarPorId(equipo.getIdRecurso());
+        System.out.println("[OUTPUT] Estado final del recurso " + recursoLiberado.getIdRecurso()
+                + ": " + recursoLiberado.getEstado());
         org.junit.jupiter.api.Assertions.assertEquals("Disponible", recursoLiberado.getEstado());
     }
 
     @Test
     void testRegistrarDevolucionTardia() throws Exception {
+        System.out.println("=== TEST: Devolución tardía ===");
         Recurso equipo = crearEquipoPrueba("Micrófono Inalámbrico Prueba", "Disponible");
 
-        // Límite era el 2026-10-10
         PrestamoEntregaDTO entrega = new PrestamoEntregaDTO(
                 equipo.getIdRecurso(), "888999000", LocalDate.of(2026, 10, 10),
                 "Bueno", "Entrega", "Pilas recargables");
         entrega.setFechaEntrega(LocalDate.of(2026, 10, 1));
         Prestamo guardado = prestamoService.registrarEntrega(entrega);
+        System.out.println("[OUTPUT] Préstamo con vencimiento 2026-10-10 creado id=" + guardado.getIdPrestamo());
 
-        // Devolución posterior a la fecha límite (2026-10-15 > 2026-10-10)
         String jsonDevolucionTardia = """
                 {
                     "fechaDevolucion": "2026-10-15",
@@ -216,6 +232,7 @@ class PrestamoControllerTest {
         mockMvc.perform(patch("/api/prestamos/" + guardado.getIdPrestamo() + "/devolucion")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonDevolucionTardia))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado", is("Devuelto")))
                 .andExpect(jsonPath("$.puntualidad", is("Tardía")));
@@ -223,19 +240,23 @@ class PrestamoControllerTest {
 
     @Test
     void testListarPrestamosActivosYTardios() throws Exception {
+        System.out.println("=== TEST: Listar préstamos activos y tardíos ===");
         mockMvc.perform(get("/api/prestamos/activos")
                         .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", isA(java.util.List.class)));
 
         mockMvc.perform(get("/api/prestamos/tardios")
                         .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", isA(java.util.List.class)));
     }
 
     @Test
     void testDeserializacionDirectaJackson() throws Exception {
+        System.out.println("=== TEST: Deserialización directa Jackson ===");
         com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
         mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
         String json = """
@@ -247,12 +268,15 @@ class PrestamoControllerTest {
                 }
                 """;
         PrestamoEntregaDTO dto = mapper.readValue(json, PrestamoEntregaDTO.class);
+        System.out.println("[OUTPUT] DTO deserializado -> fechaEntrega=" + dto.getFechaEntrega()
+                + ", fechaLimite=" + dto.getFechaLimite() + ", responsable=" + dto.getUsuarioResponsable());
         org.junit.jupiter.api.Assertions.assertEquals(java.time.LocalDate.of(2026, 10, 22), dto.getFechaEntrega());
         org.junit.jupiter.api.Assertions.assertEquals(java.time.LocalDate.of(2026, 10, 23), dto.getFechaLimite());
     }
 
     @Test
     void testRegistrarEntregaConPayloadIsoCompletoEIdUsuario() throws Exception {
+        System.out.println("=== TEST: Entrega con payload ISO completo e ID de usuario ===");
         Recurso equipo = crearEquipoPrueba("Tablet iPad Pro", "Disponible");
 
         String jsonPayload = String.format("""
@@ -272,7 +296,7 @@ class PrestamoControllerTest {
         mockMvc.perform(post("/api/prestamos/entrega")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonPayload))
-                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
+                .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.idPrestamo", notNullValue()))
                 .andExpect(jsonPath("$.usuarioResponsable", is("Juan Pérez - Estudiante (EST-202410)")))
