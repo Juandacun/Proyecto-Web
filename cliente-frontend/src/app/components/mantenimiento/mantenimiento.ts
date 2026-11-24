@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs';
 import { IncidenteService, IncidenteDTO } from '../../services/incidente';
 import { MantenimientoService, MantenimientoDTO } from '../../services/mantenimiento';
 import { RecursoService } from '../../services/recurso';
@@ -46,7 +47,8 @@ export class MantenimientoComponent implements OnInit {
   constructor(
     private incidenteService: IncidenteService,
     private mantenimientoService: MantenimientoService,
-    private recursoService: RecursoService
+    private recursoService: RecursoService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -58,7 +60,7 @@ export class MantenimientoComponent implements OnInit {
     this.mensajeError = null;
 
     // Cargar recursos
-    this.recursoService.listar().subscribe({
+    this.recursoService.listar().pipe(finalize(() => this.cdr.markForCheck())).subscribe({
       next: (data) => (this.recursos = data),
       error: (err) => console.error('Error cargando recursos', err)
     });
@@ -67,14 +69,14 @@ export class MantenimientoComponent implements OnInit {
     this.cargarMantenimientos();
 
     // Cargar incidentes
-    this.incidenteService.listar().subscribe({
+    this.incidenteService.listar().pipe(finalize(() => this.cdr.markForCheck())).subscribe({
       next: (data) => (this.incidentes = data),
       error: (err) => console.error('Error cargando incidentes', err)
     });
   }
 
   cargarMantenimientos(): void {
-    this.mantenimientoService.listar().subscribe({
+    this.mantenimientoService.listar().pipe(finalize(() => this.cdr.markForCheck())).subscribe({
       next: (data) => {
         this.mantenimientos = data;
         this.cargando = false;
@@ -112,7 +114,7 @@ export class MantenimientoComponent implements OnInit {
   this.guardandoIncidente = true;
   this.incidenteForm.recursoId = Number(this.incidenteForm.recursoId);
 
-  this.incidenteService.registrar(this.incidenteForm).subscribe({
+  this.incidenteService.registrar(this.incidenteForm).pipe(finalize(() => this.cdr.markForCheck())).subscribe({
     next: (res) => {
       this.guardandoIncidente = false;
       const nombre = this.recursoSeleccionadoParaIncidente?.nombre;
@@ -145,7 +147,7 @@ export class MantenimientoComponent implements OnInit {
       return;
     }
 
-    this.mantenimientoService.finalizar(mantenimiento.idMantenimiento).subscribe({
+    this.mantenimientoService.finalizar(mantenimiento.idMantenimiento).pipe(finalize(() => this.cdr.markForCheck())).subscribe({
       next: (res) => {
         const nombreRecurso = mantenimiento.recurso?.nombre || 'el recurso';
         this.mostrarMensajeExito(
@@ -161,7 +163,7 @@ export class MantenimientoComponent implements OnInit {
 
   // --- Cambiar estado de la intervención (Abierta -> En proceso / Cancelada) ---
   iniciarMantenimiento(mantenimiento: any): void {
-    this.mantenimientoService.cambiarEstado(mantenimiento.idMantenimiento, 'En proceso').subscribe({
+    this.mantenimientoService.cambiarEstado(mantenimiento.idMantenimiento, 'En proceso').pipe(finalize(() => this.cdr.markForCheck())).subscribe({
       next: () => {
         this.mostrarMensajeExito(`Orden #${mantenimiento.idMantenimiento} en proceso.`);
         this.cargarDatos();
@@ -176,7 +178,7 @@ export class MantenimientoComponent implements OnInit {
     if (!confirm(`¿Deseas cancelar la orden de mantenimiento #${mantenimiento.idMantenimiento}? El recurso seguirá bloqueado hasta que se habilite.`)) {
       return;
     }
-    this.mantenimientoService.cambiarEstado(mantenimiento.idMantenimiento, 'Cancelada').subscribe({
+    this.mantenimientoService.cambiarEstado(mantenimiento.idMantenimiento, 'Cancelada').pipe(finalize(() => this.cdr.markForCheck())).subscribe({
       next: () => {
         this.mostrarMensajeExito(`Orden #${mantenimiento.idMantenimiento} cancelada. El recurso permanece bloqueado.`);
         this.cargarDatos();
@@ -219,7 +221,7 @@ export class MantenimientoComponent implements OnInit {
     this.guardandoOrden = true;
     this.mantenimientoForm.recursoId = Number(this.mantenimientoForm.recursoId);
 
-    this.mantenimientoService.crearOrden(this.mantenimientoForm).subscribe({
+    this.mantenimientoService.crearOrden(this.mantenimientoForm).pipe(finalize(() => this.cdr.markForCheck())).subscribe({
       next: (res) => {
         this.guardandoOrden = false;
         this.cerrarModalNuevaOrden();
@@ -235,6 +237,9 @@ export class MantenimientoComponent implements OnInit {
 
   mostrarMensajeExito(msg: string): void {
     this.mensajeExito = msg;
-    setTimeout(() => (this.mensajeExito = null), 7000);
+    setTimeout(() => {
+      this.mensajeExito = null;
+      this.cdr.markForCheck();
+    }, 7000);
   }
 }
