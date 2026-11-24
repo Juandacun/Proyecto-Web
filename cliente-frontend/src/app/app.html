@@ -1,28 +1,57 @@
-<div class="layout">
-  <!-- Sidebar original unificado de la aplicación -->
-  <aside class="sidebar">
-    <div class="brand">CampusRecursos</div>
-    <div class="brand-sub">Gestión de reservas y recursos</div>
-    <div class="spacer"></div>
-    <a class="nav-item" routerLink="/catalogo" routerLinkActive="active">Catálogo de recursos</a>
-    <a class="nav-item" routerLink="/reservas" routerLinkActive="active">Reservas</a>
-    <a class="nav-item" routerLink="/prestamos" routerLinkActive="active">Préstamos y devoluciones</a>
-    <a class="nav-item" routerLink="/mantenimiento" routerLinkActive="active">Incidentes y Mantenimiento</a>
-    <a class="nav-item" routerLink="/tablero" routerLinkActive="active">Tablero e indicadores</a>
-  </aside>
+<div class="layout" [class.layout-publico]="!auth.estaAutenticado()">
+  @if (auth.estaAutenticado()) {
+    <!-- Sidebar original unificado de la aplicación; las opciones dependen del rol vigente -->
+    <aside class="sidebar">
+      <div class="brand">CampusRecursos</div>
+      <div class="brand-sub">Gestión de reservas y recursos</div>
+      <div class="spacer"></div>
+
+      <a class="nav-item" routerLink="/catalogo" routerLinkActive="active">Catálogo de recursos</a>
+      <a class="nav-item" routerLink="/reservas" routerLinkActive="active">
+        {{ auth.esSolicitante() ? 'Mis reservas' : 'Reservas' }}
+      </a>
+      <a class="nav-item" routerLink="/prestamos" routerLinkActive="active">
+        {{ auth.esSolicitante() ? 'Mis préstamos' : 'Préstamos y devoluciones' }}
+      </a>
+      <a class="nav-item" routerLink="/mantenimiento" routerLinkActive="active">
+        {{ auth.esSolicitante() ? 'Reportar incidentes' : 'Incidentes y Mantenimiento' }}
+      </a>
+
+      @if (auth.esGestorOAdmin()) {
+        <a class="nav-item" routerLink="/tablero" routerLinkActive="active">Tablero e indicadores</a>
+      }
+
+      @if (auth.esAdmin()) {
+        <div class="nav-section">Administración</div>
+        <a class="nav-item" routerLink="/admin/usuarios" routerLinkActive="active">Usuarios y roles</a>
+      }
+    </aside>
+  }
 
   <main class="main">
-    <!-- Topbar superior original -->
-    <header class="topbar">
-      <div class="screen-title">Campus Recursos</div>
-      <div class="right-group">
-        <div class="role-pill">
-          <span class="role-text">Invitado</span>
-          <span class="caret">▼</span>
+    @if (auth.estaAutenticado()) {
+      <!-- Topbar superior original con el usuario autenticado -->
+      <header class="topbar">
+        <div class="screen-title">Campus Recursos</div>
+        <div class="right-group">
+          <div class="user-info">
+            <span class="user-name">{{ nombreUsuario() }}</span>
+          </div>
+          <div class="role-pill" [attr.title]="'Rol: ' + etiquetaRol()">
+            <span class="role-text">{{ etiquetaRol() }}</span>
+          </div>
+          <div class="avatar" aria-hidden="true">{{ inicial() }}</div>
+          <button type="button" class="logout" (click)="cerrarSesion()">Cerrar sesión</button>
         </div>
-        <div class="avatar">I</div>
+      </header>
+    }
+
+    @if (notificaciones.actual(); as aviso) {
+      <div [class]="'toast toast-' + aviso.tipo" role="alert">
+        <span>{{ aviso.texto }}</span>
+        <button type="button" class="toast-close" (click)="notificaciones.cerrar()" aria-label="Cerrar aviso">×</button>
       </div>
-    </header>
+    }
 
     <!-- Contenedor principal de vistas SPA -->
     <router-outlet></router-outlet>
