@@ -100,6 +100,14 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!-- PRUEBAS E2E (Playwright para Java) -->
+		<dependency>
+			<groupId>com.microsoft.playwright</groupId>
+			<artifactId>playwright</artifactId>
+			<version>1.65.1</version>
+			<scope>test</scope>
+		</dependency>
+
 		<!-- SECURITY TEST -->
 		<dependency>
 			<groupId>org.springframework.security</groupId>
@@ -110,6 +118,16 @@
 
 	<build>
 		<plugins>
+			<!-- Las pruebas E2E (paquete e2e) requieren backend + SPA levantados: se ejecutan con -Pe2e -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>**/e2e/**</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
@@ -152,5 +170,35 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>e2e</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<configuration>
+							<excludes combine.self="override" />
+							<includes>
+								<include>**/e2e/**/*E2ETest.java</include>
+							</includes>
+							<systemPropertyVariables>
+								<e2e.baseUrl>${e2e.baseUrl}</e2e.baseUrl>
+								<e2e.headless>${e2e.headless}</e2e.headless>
+								<e2e.slowMo>${e2e.slowMo}</e2e.slowMo>
+							</systemPropertyVariables>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+			<properties>
+				<e2e.baseUrl>http://localhost:4200</e2e.baseUrl>
+				<e2e.headless>true</e2e.headless>
+				<e2e.slowMo>0</e2e.slowMo>
+			</properties>
+		</profile>
+	</profiles>
 
 </project>
